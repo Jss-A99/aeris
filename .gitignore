@@ -1,0 +1,18 @@
+# Dependencias
+node_modules/
+
+# Secretos: NUNCA subir (MONGO_URI y SYNC_TOKEN viven aquí)
+.env
+.env.*
+!.env.example
+
+# Registros y temporales
+*.log
+npm-debug.log*
+coverage/
+
+# Sistema operativo y editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

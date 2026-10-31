@@ -1,0 +1,21 @@
+{
+  "name": "mi-ecommerce",
+  "version": "1.0.0",
+  "description": "E-Commerce AERIS",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/productNormalizer.test.js test/contracts.test.js test/syncToken.test.js test/catalogService.test.js test/catalogFacets.test.js test/syncService.test.js test/routes.test.js test/realData.test.js test/productRepository.test.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "dotenv": "^18.0.8",
+    "ejs": "^7.0.1",
+    "express": "^5.3.0",
+    "express-ejs-layouts": "^2.5.1",
+    "mongoose": "^9.11.2"
+  }
+}
