@@ -14,7 +14,6 @@ const NOMBRE_VALIDO = /^[a-z0-9][a-z0-9._-]*\.(jpe?g|png|webp|avif)$/;
 const TIPOS = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', avif: 'image/avif' };
 const MAX_BYTES = 5 * 1024 * 1024;   // 5 MB por foto
 
-const extension = (nombre) => nombre.split('.').pop();
 
 /** Revisa los primeros bytes: que el archivo sea de verdad la imagen que dice ser. */
 function formatoReal(datos) {
@@ -40,8 +39,10 @@ function prepararFotos(lista) {
         const datos = Buffer.from(String(f.datos || ''), 'base64');
         if (!datos.length) { errores.push(`"${nombre}": el archivo llegó vacío.`); return; }
         if (datos.length > MAX_BYTES) { errores.push(`"${nombre}": pesa ${Math.round(datos.length / 1024)} KB; el máximo es ${MAX_BYTES / 1024 / 1024} MB.`); return; }
-        if (!formatoReal(datos).includes(extension(nombre))) { errores.push(`"${nombre}": el archivo no es una imagen ${extension(nombre).toUpperCase()} válida.`); return; }
-        fotos.push({ nombre, tipo: TIPOS[extension(nombre)], version: f.version, datos });
+        // Manda el contenido, no el nombre: un WEBP guardado como ".jpg" se acepta y se sirve como WEBP.
+        const real = formatoReal(datos);
+        if (!real.length) { errores.push(`"${nombre}": el archivo no es una imagen (JPG, PNG, WEBP o AVIF).`); return; }
+        fotos.push({ nombre, tipo: TIPOS[real[0]], version: f.version, datos });
     });
     return { fotos, errores };
 }

@@ -23,14 +23,20 @@ describe('fotos: validación de lo que manda el Apps Script', () => {
         const { fotos, errores } = prepararFotos([
             foto('Blusa Negra.jpg'),
             foto('falsa.jpg', Buffer.from('<script>alert(1)</script>')),
-            foto('cambiada.png', JPG),
             { nombre: 'vacia.jpg', version: 'v', datos: '' },
             foto('../fuera.jpg')
         ]);
         assert.equal(fotos.length, 0);
-        assert.equal(errores.length, 5);
+        assert.equal(errores.length, 4);
         assert.ok(errores[0].includes('minúsculas'));
-        assert.ok(errores[1].includes('no es una imagen JPG'));
+        assert.ok(errores[1].includes('no es una imagen (JPG, PNG, WEBP o AVIF)'));
+    });
+
+    test('manda el contenido, no el nombre: un WEBP guardado como .jpg se acepta y se sirve como WEBP', () => {
+        const WEBP = Buffer.concat([Buffer.from('RIFF'), Buffer.alloc(4), Buffer.from('WEBPVP8 '), Buffer.alloc(30, 3)]);
+        const { fotos, errores } = prepararFotos([foto('blusa-seda-negra.jpg', WEBP), foto('detalle.png', JPG)]);
+        assert.deepEqual(errores, []);
+        assert.deepEqual(fotos.map(f => f.tipo), ['image/webp', 'image/jpeg']);
     });
 
     test('rechaza fotos de más de 5 MB', () => {
