@@ -56,7 +56,6 @@
  * @property {string} categoria           minúsculas.
  * @property {number} precio
  * @property {number|null} precioAnterior null salvo que sea un descuento real (> precio).
- * @property {number} descuentoPct        0 si no hay descuento. Entero 1..100 si lo hay.
  * @property {boolean} esNuevo             Casilla "Nuevo" de la hoja. La vista decide dónde mostrarlo.
  * @property {boolean} publicado          Casilla "Publicado". Solo los publicados salen de la lista pública.
  * @property {string|null} creadoEn       ISO 8601 (para ordenar). null si no hay fecha válida.
@@ -117,14 +116,7 @@ function validarProductDTO(dto) {
         dto.precioAnterior === null || (Number.isFinite(dto.precioAnterior) && dto.precioAnterior > dto.precio),
         'precioAnterior debe ser null o mayor que precio'
     );
-    exigir(
-        Number.isInteger(dto.descuentoPct) && dto.descuentoPct >= 0 && dto.descuentoPct <= 100,
-        'descuentoPct debe ser un entero entre 0 y 100'
-    );
-    exigir(
-        (dto.precioAnterior === null) === (dto.descuentoPct === 0),
-        'descuentoPct es incoherente con precioAnterior'
-    );
+    exigir(!('descuentoPct' in dto), 'descuentoPct ya no existe: la tienda solo muestra el precio tachado');
 
     exigir(!('badge' in dto), 'badge ya no existe: la vista decide qué etiqueta mostrar');
     exigir(typeof dto.urlId === 'string' && /^[a-z0-9-]+$/i.test(dto.urlId), 'urlId debe ser un tramo de URL válido');

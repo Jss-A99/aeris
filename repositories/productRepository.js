@@ -6,13 +6,13 @@
  *
  * Interfaz:
  *   listarTodos()                → productos crudos (.lean())
- *   leerMeta()                   → { categorias, familiasColor, tallas } (vacío si aún no hubo sync)
+ *   leerMeta()                   → { categorias, familiasColor, tallas, promociones } (vacío si aún no hubo sync)
  *   upsertMuchos(documentos)     → inserta/actualiza por idExcel (y limpia campos heredados)
  *   guardarMeta(meta)            → reemplaza las tablas de apoyo
  *   eliminarAusentes(idExcels)   → borra todo lo que NO esté en la lista; devuelve cuántos
  */
 const META_ID = 'tablas';
-const META_VACIA = Object.freeze({ categorias: [], familiasColor: [], tallas: [] });
+const META_VACIA = Object.freeze({ categorias: [], familiasColor: [], tallas: [], promociones: [] });
 
 /** Campos del diseño anterior que el sync nuevo ya no escribe. */
 const CAMPOS_HEREDADOS = Object.freeze({ familiaColor: '', etiquetas: '', productosIncluidos: '' });
@@ -32,7 +32,8 @@ function crearProductRepository({ Producto, Meta }) {
             return {
                 categorias: doc.categorias || [],
                 familiasColor: doc.familiasColor || [],
-                tallas: doc.tallas || []
+                tallas: doc.tallas || [],
+                promociones: doc.promociones || []
             };
         },
 
@@ -56,7 +57,8 @@ function crearProductRepository({ Producto, Meta }) {
                 {
                     categorias: meta.categorias,
                     familiasColor: meta.familiasColor,
-                    tallas: meta.tallas
+                    tallas: meta.tallas,
+                    promociones: meta.promociones || []
                 },
                 { upsert: true }
             );

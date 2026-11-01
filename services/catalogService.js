@@ -91,12 +91,14 @@ function crearCatalogService({ repositorio, ttlMs = 60 * 1000, ahora = Date.now,
             return porId.get(clave) || porSku.get(clave) || (delUrlId ? porSku.get(delUrlId[1]) : null) || null;
         },
 
-        /** Datos del home: prendas sueltas y conjuntos por separado. */
+        /** Datos del home: prendas sueltas, conjuntos y las categorías de las prendas (orden de la hoja). */
         async home() {
-            const { dtos } = await obtener();
+            const { dtos, meta } = await obtener();
+            const prendas = dtos.filter(d => d.tipo === 'prenda');
             return {
-                prendas: dtos.filter(d => d.tipo === 'prenda'),
-                conjuntos: dtos.filter(d => d.tipo === 'conjunto')
+                prendas,
+                conjuntos: dtos.filter(d => d.tipo === 'conjunto'),
+                categorias: calcularFiltros(prendas, meta).categorias
             };
         },
 
@@ -117,6 +119,12 @@ function crearCatalogService({ repositorio, ttlMs = 60 * 1000, ahora = Date.now,
             return [...otros]
                 .sort((a, b) => (b.creadoEn || '').localeCompare(a.creadoEn || ''))
                 .slice(0, limite);
+        },
+
+        /** Códigos promocionales (solo para validar en el servidor; nunca se envían al navegador). */
+        async promociones() {
+            const { meta } = await obtener();
+            return (meta && meta.promociones) || [];
         },
 
         /** Descarta la caché (llamar tras un sync exitoso). */

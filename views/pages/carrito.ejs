@@ -1,0 +1,74 @@
+<%#
+  BOLSA. View model: { pagina, title }.
+  La bolsa vive en el navegador (bag-store). Esta vista arma la estructura; bolsa.js la llena
+  con los artículos, consulta precio y stock actuales (/api/bolsa/productos), valida el código
+  promocional (/api/promo), avisa del envío gratis y abre WhatsApp con el pedido.
+  Orden del resumen: primero el código (cambia el monto), luego la entrega (depende del monto).
+-%>
+<div class="cabecera">
+    <h1 class="titulo" data-tope data-compacto><span data-ajustar>TU BOLSA</span></h1>
+    <script>aerisAjustar()</script>
+    <div class="regla"></div>
+</div>
+<%- include('../partials/pestanas-cuenta', { activa: 'bolsa' }) %>
+
+<section class="bolsa" aria-label="Artículos de tu bolsa">
+    <div class="lineas" id="lineas" aria-busy="true">
+        <span class="oculto">Cargando tu bolsa…</span>
+        <div class="linea esqueleto" aria-hidden="true"><i class="e-nombre"></i><i class="e-precio"></i><i class="e-opciones"></i><i class="e-foto"></i></div>
+        <div class="linea esqueleto" aria-hidden="true"><i class="e-nombre"></i><i class="e-precio"></i><i class="e-opciones"></i><i class="e-foto"></i></div>
+    </div>
+
+    <div class="bolsa-vacia" id="bolsaVacia" hidden>
+        <p>Tu bolsa está vacía.</p>
+        <a class="enlace" href="/catalogo">Ver catálogo</a>
+    </div>
+
+    <div class="resumen" id="resumen" hidden>
+        <div class="res-opciones">
+            <form class="grupo promo" id="formPromo" novalidate>
+                <label class="grupo-titulo" for="codigo">Código promocional</label>
+                <div class="promo-fila" id="promoFila">
+                    <input type="text" id="codigo" name="codigo" maxlength="30" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Escribe tu código">
+                    <button type="submit" class="btn-sec">Aplicar</button>
+                </div>
+                <div class="promo-aplicado" id="promoAplicado" hidden></div>
+                <p class="promo-msg" id="promoMsg" role="status"></p>
+            </form>
+
+            <fieldset class="grupo" id="grupoEntrega">
+                <legend class="grupo-titulo">Entrega</legend>
+                <% Object.entries(tienda.entrega).forEach(([valor, e]) => { %>
+                <label class="opc entrega">
+                    <input type="radio" name="entrega" value="<%= valor %>">
+                    <span class="marca"></span>
+                    <span><b><%= e.titulo %></b><small data-detalle="<%= valor %>"><%= e.detalle %></small></span>
+                </label>
+                <% }) %>
+            </fieldset>
+        </div>
+
+        <div class="res-totales">
+            <div class="envio-gratis" id="envioGratis" hidden>
+                <span class="grupo-titulo">Envío gratis en Lima</span>
+                <span class="avance" aria-hidden="true"><i id="avanceRelleno"></i></span>
+                <p id="envioGratisTexto" role="status"></p>
+            </div>
+            <dl class="totales">
+                <div><dt>Subtotal</dt><dd id="tSubtotal"></dd></div>
+                <div id="filaDesc" hidden><dt>Descuento <span id="tCodigo"></span></dt><dd id="tDesc"></dd></div>
+                <div><dt>Envío</dt><dd id="tEnvio">Elige una opción</dd></div>
+                <div class="total"><dt>Total</dt><dd id="tTotal"></dd></div>
+            </dl>
+            <p class="aviso-entrega" id="avisoEntrega" role="alert" hidden>Elige cómo quieres recibir tu pedido.</p>
+            <button type="button" class="btn btn-wa" id="finalizar"><%- include('../partials/icono', { nombre: 'whatsapp-logo' }) %>Finalizar orden</button>
+            <a class="enlace volver" href="/catalogo">Volver al catálogo</a>
+        </div>
+    </div>
+</section>
+
+<script type="application/json" id="datos-bolsa"><%- jsonParaHtml({ whatsapp: tienda.whatsapp, envio: tienda.envio, entrega: tienda.entrega }) %></script>
+
+<%- contentFor('scripts') %>
+<script src="/js/core/pedido.js"></script>
+<script src="/js/ui/bolsa.js"></script>

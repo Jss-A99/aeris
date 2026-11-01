@@ -1,0 +1,10 @@
+<%#
+  Pestañas "Bolsa · Favoritos" bajo el título de esas dos páginas. Recibe `activa`: 'bolsa' | 'favoritos'.
+  Los números los llena tienda.js desde los stores (data-cuenta).
+-%>
+<div class="pestanas-cuenta">
+    <nav class="tabs" aria-label="Tu bolsa y tus favoritos">
+        <a href="/carrito"<%- activa === 'bolsa' ? ' aria-current="page"' : '' %>>Bolsa<sup data-cuenta="bolsa">0</sup></a>
+        <a href="/favoritos"<%- activa === 'favoritos' ? ' aria-current="page"' : '' %>>Favoritos<sup data-cuenta="wish">0</sup></a>
+    </nav>
+</div>

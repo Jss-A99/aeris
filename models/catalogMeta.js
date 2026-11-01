@@ -1,7 +1,7 @@
 /**
  * Modelo de las TABLAS DE APOYO del catálogo — AERIS E-commerce
  *
- * Las pestañas CATEGORÍAS, FAMILIAS COLOR y TALLAS de la hoja viajan juntas en UN solo
+ * Las pestañas CATEGORÍAS, FAMILIAS COLOR, TALLAS y PROMOCIONES de la hoja viajan juntas en UN solo
  * documento (_id: 'tablas'). Son pocas filas, se leen siempre juntas y así se reemplazan
  * de forma atómica en cada sync.
  */
@@ -23,6 +23,14 @@ const catalogMetaSchema = new mongoose.Schema({
     tallas: [new mongoose.Schema({
         talla: { type: String, required: true },       // MAYÚSCULAS: "XL", "32"
         orden: { type: Number, required: true }
+    }, { _id: false })],
+    promociones: [new mongoose.Schema({
+        codigo: { type: String, required: true },      // MAYÚSCULAS sin espacios: "AERIS10"
+        tipo: { type: String, enum: ['porcentaje', 'monto'], required: true },
+        valor: { type: Number, required: true },       // 10 (%) o 20 (S/)
+        minimo: { type: Number, default: 0 },          // compra mínima en S/
+        vence: { type: String, default: null },        // "2026-12-31" (día en Lima) o null
+        activo: { type: Boolean, default: true }
     }, { _id: false })]
 }, { timestamps: true });
 

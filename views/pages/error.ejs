@@ -1,0 +1,7 @@
+<%# ERROR. View model: { pagina, title, mensaje, status } (lo renderiza middlewares/errorHandler.js) -%>
+<section class="simple">
+    <h1><%= status === 404 ? 'No encontrada' : 'Algo salió mal' %></h1>
+    <div class="regla"></div>
+    <p><%= mensaje %></p>
+    <a class="enlace" href="/">Volver al inicio</a>
+</section>

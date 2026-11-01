@@ -1,12 +1,12 @@
 /**
  * ============================================================================
- * CONTRATOS DEL CLIENTE: CartItem y FavItem — AERIS E-COMMERCE
+ * CONTRATOS DEL CLIENTE: CartItem y WishItem — AERIS E-COMMERCE
  * ============================================================================
  * @file public/js/core/contracts.js
  *
- * Define la ÚNICA forma válida de una línea del carrito y de un favorito, y
+ * Define la ÚNICA forma válida de una línea del carrito y de un item de la wishlist, y
  * cómo se construyen a partir de un ProductDTO (ver utils/productContract.js).
- * No toca localStorage ni el DOM: eso será trabajo de cart-store / fav-store.
+ * No toca localStorage ni el DOM: eso lo hacen bag-store y wish-store.
  *
  * Funciona en el navegador (window.AerisContracts) y en Node (require), para
  * poder probarlo con `node --test`.
@@ -31,7 +31,7 @@
  * @property {string} url
  * @property {number} addedAt          Date.now()
  *
- * @typedef {Object} FavItem
+ * @typedef {Object} WishItem
  * @property {string} id
  * @property {'prenda'|'conjunto'} tipo
  * @property {string} titulo
@@ -50,9 +50,6 @@
 })(typeof self !== 'undefined' ? self : this, function () {
     'use strict';
 
-    const IMAGEN_PLACEHOLDER = '/images/placeholder.svg';
-    const IMAGEN_BASE = '/images/productos/';
-
     /* ------------------------------------------------------------------ */
     /* Utilidades                                                          */
     /* ------------------------------------------------------------------ */
@@ -61,32 +58,9 @@
     const minus = (v) => texto(v).toLowerCase();
     const mayus = (v) => texto(v).toUpperCase();
 
-    /** "Único"/"Única"/vacío → null (el contrato usa null para "sin opción"). */
-    function limpiarOpcion(v) {
-        const s = texto(v);
-        return (!s || /^[uú]nic[oa]$/i.test(s)) ? null : s;
-    }
-
     function normalizarCantidad(c) {
         const n = Math.floor(Number(c));
         return Number.isFinite(n) && n >= 1 ? n : 1;
-    }
-
-    function rutaDe(tipo, id) {
-        return (tipo === 'conjunto' ? '/conjunto/' : '/producto/') + id;
-    }
-
-    /** Ruta relativa. Quita el origen propio (http://localhost:3001) y completa nombres sueltos. */
-    function normalizarImagen(img, origen) {
-        const s = texto(img);
-        if (!s) return IMAGEN_PLACEHOLDER;
-        if (origen && s.startsWith(origen + '/')) return s.slice(origen.length);
-        if (/^https?:\/\//i.test(s) || s.startsWith('/')) return s;
-        return IMAGEN_BASE + s;
-    }
-
-    function origenActual() {
-        return (typeof location !== 'undefined' && location && location.origin) ? location.origin : null;
     }
 
     class CartItemError extends Error {
@@ -210,81 +184,12 @@
         return item;
     }
 
-    /**
-     * MIGRACIÓN: acepta cualquiera de las formas antiguas que hay hoy en el
-     * localStorage de los clientes y devuelve un CartItem (o null si no se
-     * puede recuperar). Formas conocidas:
-     *  - main.js:             {id,titulo,color,talla,precio,cantidad,imagen}
-     *  - conjunto-detalle.js: {tipo:'conjunto', componentes:[{id,nombre,color,talla}], ...}
-     *  - bottom sheet mobile: {esConjunto:true, piezas:[{piezaIndex,color,talla}]} (sin ids de pieza)
-     *
-     * Nota: los conjuntos que el bottom sheet guardó pasando por main.js
-     * perdieron `piezas` y `esConjunto` al guardarse; esos no son recuperables
-     * y quedan como prenda con el id del conjunto.
-     */
-    function normalizeCartItem(raw, opciones) {
-        if (!raw || typeof raw !== 'object') return null;
-        const origen = opciones && opciones.origen !== undefined ? opciones.origen : origenActual();
-
-        const id = texto(raw.id !== undefined ? raw.id : raw._id);
-        if (!id) return null;
-
-        const esConjunto = raw.tipo === 'conjunto' || raw.esConjunto === true;
-        const tipo = esConjunto ? 'conjunto' : 'prenda';
-        const precio = Number(raw.precio);
-
-        let componentes = [];
-        if (esConjunto) {
-            const origenComp = Array.isArray(raw.componentes) ? raw.componentes
-                : (Array.isArray(raw.piezas) ? raw.piezas : []);
-            componentes = origenComp.map((c, i) => ({
-                id: texto(c && (c.id !== undefined ? c.id : c.piezaId)),
-                nombre: texto(c && c.nombre) || `Pieza ${(c && c.piezaIndex) || i + 1}`,
-                color: limpiarOpcion(c && c.color),
-                talla: limpiarOpcion(c && c.talla)
-            }));
-        }
-
-        const item = {
-            id,
-            tipo,
-            titulo: texto(raw.titulo !== undefined ? raw.titulo : raw.nombre) || (esConjunto ? 'Conjunto AERIS' : 'Prenda AERIS'),
-            precio: Number.isFinite(precio) && precio >= 0 ? precio : 0,
-            imagen: normalizarImagen(raw.imagen !== undefined ? raw.imagen : raw.imagenPrincipal, origen),
-            cantidad: normalizarCantidad(raw.cantidad !== undefined ? raw.cantidad : raw.quantity),
-            color: esConjunto ? null : limpiarOpcion(raw.color),
-            talla: esConjunto ? null : limpiarOpcion(raw.talla),
-            componentes,
-            url: rutaDe(tipo, id),
-            addedAt: Number(raw.addedAt || raw.timestamp) || Date.now()
-        };
-        item.key = cartItemKey(item);
-        return item;
-    }
-
-    /** Lista cualquiera → { items (fusionados por key), descartados }. */
-    function migrateCart(rawList, opciones) {
-        const lista = Array.isArray(rawList) ? rawList : [];
-        const porKey = new Map();
-        let descartados = 0;
-
-        lista.forEach(raw => {
-            const item = normalizeCartItem(raw, opciones);
-            if (!item) { descartados++; return; }
-            const existente = porKey.get(item.key);
-            if (existente) existente.cantidad += item.cantidad;
-            else porKey.set(item.key, item);
-        });
-
-        return { items: [...porKey.values()], descartados };
-    }
-
     /* ------------------------------------------------------------------ */
-    /* FavItem                                                             */
+    /* WishItem                                                             */
     /* ------------------------------------------------------------------ */
 
-    /** @returns {FavItem} */
-    function buildFavItem(dto) {
+    /** @returns {WishItem} */
+    function buildWishItem(dto) {
         if (!dto || !dto.id) throw new CartItemError('PRODUCTO_INVALIDO', 'Producto inválido.');
         return {
             id: dto.id,
@@ -297,51 +202,10 @@
         };
     }
 
-    /**
-     * MIGRACIÓN de favoritos antiguos: objetos {id,titulo,precio,imagen} o ids
-     * sueltos (conjunto-detalle.js toleraba ambos).
-     * No se puede saber si era un conjunto: se enlaza a /producto/:id, que
-     * también resuelve conjuntos.
-     */
-    function normalizeFavItem(raw, opciones) {
-        if (raw === null || raw === undefined) return null;
-        const origen = opciones && opciones.origen !== undefined ? opciones.origen : origenActual();
-        const obj = (typeof raw === 'object') ? raw : { id: raw };
-
-        const id = texto(obj.id !== undefined ? obj.id : obj._id);
-        if (!id) return null;
-        const tipo = obj.tipo === 'conjunto' ? 'conjunto' : 'prenda';
-        const precio = Number(obj.precio);
-
-        return {
-            id,
-            tipo,
-            titulo: texto(obj.titulo !== undefined ? obj.titulo : obj.nombre) || (tipo === 'conjunto' ? 'Conjunto AERIS' : 'Prenda AERIS'),
-            precio: Number.isFinite(precio) && precio >= 0 ? precio : 0,
-            imagen: normalizarImagen(obj.imagen !== undefined ? obj.imagen : obj.imagenPrincipal, origen),
-            url: rutaDe(tipo, id),
-            addedAt: Number(obj.addedAt) || Date.now()
-        };
-    }
-
-    /** Lista cualquiera → favoritos únicos por id. */
-    function migrateFavorites(rawList, opciones) {
-        const vistos = new Map();
-        (Array.isArray(rawList) ? rawList : []).forEach(raw => {
-            const fav = normalizeFavItem(raw, opciones);
-            if (fav && !vistos.has(fav.id)) vistos.set(fav.id, fav);
-        });
-        return [...vistos.values()];
-    }
-
     return {
         CartItemError,
         cartItemKey,
         buildCartItem,
-        normalizeCartItem,
-        migrateCart,
-        buildFavItem,
-        normalizeFavItem,
-        migrateFavorites
+        buildWishItem
     };
 });

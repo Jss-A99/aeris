@@ -72,8 +72,8 @@ describe('catálogo real: del sync al mapper', () => {
         assert.deepEqual([...conjunto.familiasColor].sort(), ['beige', 'blanco', 'negro']);
     });
 
-    test('descuentos reales: 23 %, 23 % y 25 %; el resto sin descuento', () => {
-        assert.deepEqual(catalogo().map(d => d.descuentoPct), [0, 23, 23, 0, 25, 0]);
+    test('descuentos reales: tres productos con precio tachado; el resto sin descuento', () => {
+        assert.deepEqual(catalogo().map(d => d.precioAnterior !== null), [false, true, true, false, true, false]);
     });
 
     test('"Nuevo" viene de la casilla: ninguno marcado, ninguno nuevo', () => {

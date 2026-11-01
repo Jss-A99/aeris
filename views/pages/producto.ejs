@@ -1,0 +1,38 @@
+<%#
+  PRODUCTO. View model: { pagina, title, producto: ProductDTO, relacionados: ProductDTO[], migas }
+  Color, talla, cantidad y agregar a la bolsa los maneja producto.js con los datos de #datos-producto.
+-%>
+<% const unicas = (lista) => [...new Set(lista.filter(Boolean))]; %>
+<% const fotos = unicas([...producto.galeria, ...producto.colores.map(c => c.imagen)]); %>
+
+<div class="ficha-wrap">
+    <%- include('../partials/galeria', { fotos, nombre: producto.nombre }) %>
+
+    <div class="ficha" id="ficha">
+        <%- include('../partials/ficha-cabecera', { p: producto, migas }) %>
+        <div class="sep"></div>
+        <div class="opciones-pieza" data-opciones="0"></div>
+        <%- include('../partials/ficha-compra', { p: producto }) %>
+    </div>
+</div>
+
+<% if (relacionados.length) { %>
+<section class="sec" aria-labelledby="t-relacionados">
+    <div class="cab">
+        <h2 id="t-relacionados">También te puede gustar</h2>
+        <% if (migas.categoria) { %>
+        <p>Más <%= migas.categoria.nombre.toLowerCase() %> de la temporada.</p>
+        <a href="<%= migas.categoria.href %>">Ver <%= migas.categoria.nombre.toLowerCase() %></a>
+        <% } %>
+    </div>
+    <div class="grid">
+        <% relacionados.forEach(p => { %><%- include('../partials/tarjeta', { p }) %><% }) %>
+    </div>
+</section>
+<% } %>
+
+<script type="application/json" id="datos-producto"><%- jsonParaHtml(producto) %></script>
+<script type="application/json" data-productos><%- jsonParaHtml(Object.fromEntries([producto, ...relacionados].map(p => [p.id, p]))) %></script>
+
+<%- contentFor('scripts') %>
+<script src="/js/ui/producto.js"></script>

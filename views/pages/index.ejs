@@ -1,0 +1,110 @@
+<%#
+  INICIO. View model: { pagina, title, pestanas: [{id,nombre,total,items}], looks: ProductDTO[] }
+  Las 8 prendas de cada pestaña ya vienen elegidas al azar por el servidor (utils/homeSelection.js).
+-%>
+<% const dos = (n) => String(n).padStart(2, '0'); %>
+<% const banners = tienda.hero; %>
+
+<section class="hero" id="hero" aria-label="Novedades">
+    <% banners.forEach((b, i) => { %>
+    <div class="slide<%= i === 0 ? ' on' : '' %>"<% if (b.imagen) { %> style="background-image: url('<%= b.imagen %>')"<% } %>
+         data-titulo="<%= b.titulo %>" data-enlace="<%= b.enlace %>" data-texto-enlace="<%= b.textoEnlace %>"<%= i === 0 ? '' : ' aria-hidden=true' %>></div>
+    <% }) %>
+    <% if (banners.length > 1) { %>
+    <div class="barras" aria-hidden="true"><% banners.forEach((b, i) => { %><i<%- i === 0 ? ' class="on"' : '' %>></i><% }) %></div>
+    <% } %>
+    <div class="leyenda">
+        <span>
+            <% if (banners.length > 1) { %><span class="num" id="heroNum">01 / <%= dos(banners.length) %></span><% } %>
+            <span id="heroTitulo"><%= banners[0].titulo %></span>
+            <a class="ir" id="heroEnlace" href="<%= banners[0].enlace %>"><%= banners[0].textoEnlace %></a>
+        </span>
+        <% if (banners.length > 1) { %>
+        <span class="flechas">
+            <button type="button" id="heroPrev" aria-label="Banner anterior"><%- include('../partials/icono', { nombre: 'flecha-izq' }) %></button>
+            <button type="button" id="heroNext" aria-label="Banner siguiente"><%- include('../partials/icono', { nombre: 'flecha' }) %></button>
+        </span>
+        <% } %>
+    </div>
+    <h1 class="marca-grande"><span data-ajustar>AERIS</span></h1>
+    <script>aerisAjustar()</script>
+</section>
+
+<section class="ventajas" aria-labelledby="t-ventajas">
+    <h2 id="t-ventajas">Comprar en AERIS<br>es simple</h2>
+    <ul class="items">
+        <% tienda.ventajas.forEach(v => { %>
+        <li class="item"><%- include('../partials/icono', { nombre: v.icono }) %><span><% v.lineas.forEach((linea, k) => { %><%= linea %><% if (k < v.lineas.length - 1) { %><br><% } %><% }) %></span></li>
+        <% }) %>
+    </ul>
+</section>
+
+<section class="sec" aria-labelledby="t-categorias">
+    <div class="cab">
+        <h2 id="t-categorias">Categorías</h2>
+        <p>Prendas pensadas para el día a día en Lima. Elige una categoría o mira todo.</p>
+        <%# Lleva al catálogo con la pestaña elegida (inicio.js cambia el enlace) %>
+        <a id="verMas" href="/catalogo">Ver catálogo</a>
+    </div>
+    <div class="tabs" role="tablist" aria-label="Categorías" id="tabsInicio">
+        <% pestanas.forEach((t, i) => { %>
+        <button type="button" role="tab" id="tab-<%= t.id %>" aria-controls="panel-<%= t.id %>" aria-selected="<%= i === 0 %>"<%- i === 0 ? '' : ' tabindex="-1"' %>
+                data-catalogo="/catalogo<%= t.id === 'todo' ? '' : '?categoria=' + encodeURIComponent(t.id) %>"><%= t.nombre %><sup><%= t.total %></sup></button>
+        <% }) %>
+    </div>
+    <% pestanas.forEach((t, i) => { %>
+    <div class="grid" role="tabpanel" id="panel-<%= t.id %>" aria-labelledby="tab-<%= t.id %>"<%= i === 0 ? '' : ' hidden' %>>
+        <% if (t.items.length === 0) { %>
+        <p class="vacio-corto">Pronto habrá prendas nuevas en esta categoría.</p>
+        <% } %>
+        <% t.items.forEach(p => { %><%- include('../partials/tarjeta', { p }) %><% }) %>
+    </div>
+    <% }) %>
+</section>
+
+<% if (looks.length > 0) { %>
+<section class="sec" aria-labelledby="t-conjuntos">
+    <div class="cab">
+        <h2 id="t-conjuntos">Conjuntos</h2>
+        <p>Piezas que combinan. Eliges talla y color de cada una y pides todo junto.</p>
+        <a href="/catalogo?categoria=<%= encodeURIComponent(looks[0].categoria) %>">Ver todos</a>
+    </div>
+    <% looks.forEach((l, i) => { %>
+    <div class="look" data-look="<%= i %>"<%= i === 0 ? '' : ' hidden' %>>
+        <a class="foto" href="<%= l.url %>"><img src="<%= l.imagen %>" alt="<%= l.nombre %>" loading="lazy" decoding="async"></a>
+        <div class="look-info">
+            <span class="look-num">Look <%= dos(i + 1) %> / <%= dos(looks.length) %></span>
+            <h3><%= l.nombre %></h3>
+            <% if (l.descripcion && l.descripcion !== '-') { %><p><%= l.descripcion %></p><% } %>
+            <ol class="piezas">
+                <% l.piezas.forEach((pz, k) => { %>
+                <li class="pieza"><b><%= k + 1 %></b><span><%= pz.nombre %></span><span><%= pz.tallas.join(' · ') %></span></li>
+                <% }) %>
+            </ol>
+            <div class="look-total">
+                <span>Precio del conjunto</span>
+                <b><%= soles(l.precio) %><% if (l.precioAnterior !== null) { %> <s><%= soles(l.precioAnterior) %></s><% } %></b>
+            </div>
+            <a class="enlace" href="<%= l.url %>">Ver conjunto</a>
+            <% if (looks.length > 1) { %>
+            <div class="otros">
+                <% looks.forEach((o, k) => { %>
+                <button type="button" data-ir-look="<%= k %>" aria-pressed="<%= k === i %>" aria-label="Ver look <%= o.nombre %>">
+                    <span class="mini"><img src="<%= o.imagen %>" alt="" loading="lazy" decoding="async"></span>
+                    <small><%= dos(k + 1) %> · <%= o.nombre %></small>
+                </button>
+                <% }) %>
+            </div>
+            <% } %>
+        </div>
+    </div>
+    <% }) %>
+</section>
+<% } %>
+
+<%# Datos para el selector rápido y la wishlist (solo de las tarjetas visibles) %>
+<% const mapa = {}; pestanas.forEach(t => t.items.forEach(p => { mapa[p.id] = p; })); looks.forEach(l => { mapa[l.id] = l; }); %>
+<script type="application/json" data-productos><%- jsonParaHtml(mapa) %></script>
+
+<%- contentFor('scripts') %>
+<script src="/js/ui/inicio.js"></script>

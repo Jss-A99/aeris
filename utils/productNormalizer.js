@@ -111,19 +111,15 @@ const esNuevoRaw = (raw) => raw.nuevo === true;
 /** Documentos antiguos (sin el campo) se consideran publicados; el sync siempre lo escribe. */
 const esPublicadoRaw = (raw) => raw.publicado !== false;
 
+/**
+ * Precio y precio anterior (el que se muestra tachado). La tienda NO muestra porcentaje de
+ * descuento: solo el precio tachado. Una diferencia de menos del 1 % no cuenta como descuento.
+ */
 function calcularPrecios(raw) {
     const precio = Math.max(0, Number(raw.precio) || 0);
     const anterior = Number(raw.precioAnterior);
-    let precioAnterior = Number.isFinite(anterior) && anterior > precio ? anterior : null;
-    let descuentoPct = 0;
-    if (precioAnterior !== null) {
-        descuentoPct = Math.round(((precioAnterior - precio) / precioAnterior) * 100);
-        if (descuentoPct < 1) {      // diferencia insignificante: no cuenta como descuento
-            precioAnterior = null;
-            descuentoPct = 0;
-        }
-    }
-    return { precio, precioAnterior, descuentoPct };
+    const esDescuento = Number.isFinite(anterior) && anterior > precio && (anterior - precio) / anterior >= 0.01;
+    return { precio, precioAnterior: esDescuento ? anterior : null };
 }
 
 function construirGaleria(raw) {
@@ -193,7 +189,7 @@ function construirBase(raw, ordenTallas, tipo) {
     const galeria = construirGaleria(raw);
     const imagen = galeria[0];
     const { variantes, colores, tallas } = normalizarVariantes(raw.variantes, imagen, ordenTallas);
-    const { precio, precioAnterior, descuentoPct } = calcularPrecios(raw);
+    const { precio, precioAnterior } = calcularPrecios(raw);
     const creadoMs = fechaMs(raw.createdAt);
     const stockTotal = variantes.reduce((suma, v) => suma + v.stock, 0);
 
@@ -219,7 +215,6 @@ function construirBase(raw, ordenTallas, tipo) {
         categoria: texto(raw.categoria).toLowerCase(),
         precio,
         precioAnterior,
-        descuentoPct,
         esNuevo: esNuevoRaw(raw),
         publicado: esPublicadoRaw(raw),
         creadoEn: creadoMs === null ? null : new Date(creadoMs).toISOString(),

@@ -1,0 +1,29 @@
+<%#
+  Navbar. Transparente arriba; al hacer scroll pasa a vidrio y se pinta de rubí (tienda.js).
+  Los contadores de wishlist y bolsa los llena tienda.js desde los stores.
+-%>
+<% const enlaces = [['/', 'home', 'Inicio'], ['/catalogo', 'catalogo', 'Catálogo'], ['/nosotros', 'nosotros', 'Nosotros']]; %>
+<header class="nav" id="nav">
+    <a class="logo" href="/" aria-label="AERIS, ir al inicio">A<b></b></a>
+    <nav class="links" aria-label="Principal">
+        <% enlaces.forEach(([href, id, texto]) => { %>
+        <a href="<%= href %>"<%- pagina === id ? ' aria-current="page"' : '' %>><%= texto %></a>
+        <% }) %>
+    </nav>
+    <div class="iconos">
+        <a class="ico" href="/favoritos" aria-label="Favoritos"><%- include('icono', { nombre: 'wishlist' }) %><em data-contador="wish" hidden></em></a>
+        <a class="ico" href="/carrito" aria-label="Bolsa" id="icoBolsa"><%- include('icono', { nombre: 'bolsa' }) %><em data-contador="bolsa" hidden></em></a>
+        <button class="ico menu-btn" id="menuBtn" type="button" aria-label="Abrir menú" aria-expanded="false" aria-controls="panelMenu"><%- include('icono', { nombre: 'menu' }) %></button>
+    </div>
+    <div class="panel-menu" id="panelMenu" hidden>
+        <nav aria-label="Menú">
+            <% enlaces.forEach(([href, id, texto]) => { %>
+            <a href="<%= href %>"<%- pagina === id ? ' aria-current="page"' : '' %>><%= texto %></a>
+            <% }) %>
+        </nav>
+        <div class="bajo">
+            <a href="/favoritos">Favoritos (<span data-cuenta="wish">0</span>)</a>
+            <a href="/carrito">Bolsa (<span data-cuenta="bolsa">0</span>)</a>
+        </div>
+    </div>
+</header>

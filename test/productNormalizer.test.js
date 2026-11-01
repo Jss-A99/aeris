@@ -148,10 +148,10 @@ describe('toProductDTO — prenda', () => {
 });
 
 describe('toProductDTO — descuento, novedad y últimas unidades (hechos, sin etiquetas)', () => {
-    test('descuento real: porcentaje redondeado y SIN badge (la vista decide qué mostrar)', () => {
+    test('descuento real: solo el precio anterior (tachado); sin porcentaje ni badge', () => {
         const dto = toProductDTO(blusa({ precio: 75, precioAnterior: 100 }), { ahora: AHORA });
-        assert.equal(dto.descuentoPct, 25);
         assert.equal(dto.precioAnterior, 100);
+        assert.ok(!('descuentoPct' in dto));
         assert.ok(!('badge' in dto));
         assert.deepEqual(validarProductDTO(dto), []);
     });
@@ -160,14 +160,15 @@ describe('toProductDTO — descuento, novedad y últimas unidades (hechos, sin e
         for (const precioAnterior of [100, 90, null, '', undefined, 'abc', 0]) {
             const dto = toProductDTO(blusa({ precio: 100, precioAnterior }), { ahora: AHORA });
             assert.equal(dto.precioAnterior, null, `precioAnterior=${precioAnterior}`);
-            assert.equal(dto.descuentoPct, 0);
         }
+        // Diferencia de menos del 1 %: no se tacha
+        assert.equal(toProductDTO(blusa({ precio: 99.7, precioAnterior: 100 }), { ahora: AHORA }).precioAnterior, null);
     });
 
     test('nuevo y descuento son hechos independientes: pueden darse a la vez', () => {
         const dto = toProductDTO(blusa({ precio: 50, precioAnterior: 100, nuevo: true }), { ahora: AHORA });
         assert.equal(dto.esNuevo, true);
-        assert.equal(dto.descuentoPct, 50);
+        assert.equal(dto.precioAnterior, 100);
     });
 
     test('esNuevo viene SOLO de la casilla "Nuevo": ni la fecha ni las etiquetas antiguas cuentan', () => {

@@ -7,9 +7,10 @@ const express = require('express');
 /**
  * @param {Object} deps
  * @param {ReturnType<import('../controllers/pagesController').crearPagesController>} deps.pages
+ * @param {ReturnType<import('../controllers/bolsaController').crearBolsaController>} deps.bolsa
  * @param {import('express').Router} deps.syncRouter
  */
-function crearRutas({ pages, syncRouter }) {
+function crearRutas({ pages, bolsa, syncRouter }) {
     const router = express.Router();
 
     // Salud del servicio (Render / monitores). No toca la base de datos.
@@ -27,6 +28,10 @@ function crearRutas({ pages, syncRouter }) {
     router.get('/productos/:id', (req, res) => {
         res.redirect(301, `/producto/${encodeURIComponent(req.params.id)}`);
     });
+
+    // API de la bolsa (lectura; no guarda nada)
+    router.get('/api/bolsa/productos', bolsa.productos);
+    router.get('/api/promo', bolsa.promo);
 
     router.use('/api', syncRouter);
 

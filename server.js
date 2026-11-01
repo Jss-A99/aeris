@@ -23,9 +23,11 @@ const { handle404, handleErrors } = require('./middlewares/errorHandler');
 const { crearCatalogService } = require('./services/catalogService');
 const { crearPagesController } = require('./controllers/pagesController');
 const { crearSyncController } = require('./controllers/syncController');
+const { crearBolsaController } = require('./controllers/bolsaController');
 const { crearSyncRoutes } = require('./routes/syncRoutes');
 const { crearRutas } = require('./routes/index');
 const { jsonParaHtml } = require('./utils/safeJson');
+const { soles } = require('./utils/formato');
 
 /**
  * @param {Object} [opciones]
@@ -50,8 +52,10 @@ function crearApp(opciones = {}) {
     app.set('views', opciones.viewsDir || path.join(__dirname, 'views'));
     if (opciones.layouts !== false) app.use(expressLayouts);
 
-    // Disponible en TODAS las vistas: <%- jsonParaHtml(dato) %>
+    // Disponible en TODAS las vistas: <%- jsonParaHtml(dato) %>, <%= soles(79.9) %>, tienda.hero...
     app.locals.jsonParaHtml = jsonParaHtml;
+    app.locals.soles = soles;
+    app.locals.tienda = opciones.tienda || require('./config/tienda');
 
     // Cabeceras mínimas. La CSP completa se define con el diseño (depende de fuentes y scripts).
     app.use((req, res, next) => {
@@ -67,7 +71,8 @@ function crearApp(opciones = {}) {
 
     const pages = crearPagesController({ catalogo });
     const syncController = crearSyncController({ repositorio, catalogo });
-    app.use('/', crearRutas({ pages, syncRouter: crearSyncRoutes(syncController) }));
+    const bolsa = crearBolsaController({ catalogo });
+    app.use('/', crearRutas({ pages, bolsa, syncRouter: crearSyncRoutes(syncController) }));
 
     app.use(handle404);
     app.use(handleErrors);

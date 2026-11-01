@@ -109,20 +109,26 @@ describe('app completa', () => {
     });
 
     describe('páginas y view models', () => {
-        test('home: prendas y conjuntos separados', async () => {
+        test('home: pestañas (Todo + categorías de prendas) y looks de conjuntos', async () => {
             const v = await vista('/');
             assert.equal(v.pagina, 'home');
-            assert.equal(v.prendas.length, 2);
-            assert.equal(v.conjuntos.length, 1);
-            assert.equal(v.conjuntos[0].piezas.length, 2);
+            assert.deepEqual(v.pestanas.map(t => t.id), ['todo', 'blusas']);
+            assert.equal(v.pestanas[0].items.length, 2);
+            assert.ok(v.pestanas[0].items.every(p => p.tipo === 'prenda'));
+            assert.equal(v.looks.length, 1);
+            assert.equal(v.looks[0].piezas.length, 2);
         });
 
         test('catálogo: categoría normalizada (o "todo") y filtros calculados', async () => {
-            assert.equal((await vista('/catalogo?categoria=%20Blusas')).categoriaSeleccionada, 'blusas');
+            const blusas = await vista('/catalogo?categoria=%20Blusas');
+            assert.equal(blusas.categoriaSeleccionada, 'blusas');
+            assert.equal(blusas.resultado.total, 2);
             const v = await vista('/catalogo');
             assert.equal(v.categoriaSeleccionada, 'todo');
-            assert.equal(v.productos.length, 3);
+            assert.equal(v.resultado.total, 3);
+            assert.equal(v.datosConteo.length, 3);
             assert.deepEqual(v.filtros.precio, { min: 90, max: 200 });
+            assert.equal((await vista('/catalogo?orden=asc&pagina=99')).resultado.pagina, 1);
         });
 
         test('producto: DTO + relacionados (sin incluirse a sí mismo)', async () => {
@@ -259,7 +265,7 @@ describe('app completa', () => {
         });
 
         test('sync válido: guarda, devuelve el conteo y la tienda refleja el cambio de inmediato (caché invalidada)', async () => {
-            assert.equal((await vista('/')).prendas.length, 2);           // llena la caché (TTL 60 s)
+            assert.equal((await vista('/')).pestanas[0].total, 2);           // llena la caché (TTL 60 s)
 
             const res = await sync(hoja(), { 'x-sync-token': TOKEN });
             const cuerpo = await res.json();
@@ -270,12 +276,12 @@ describe('app completa', () => {
             assert.deepEqual(cuerpo.advertencias, []);
 
             const home = await vista('/');
-            assert.equal(home.prendas.length, 5);
-            assert.equal(home.conjuntos.length, 1);
-            assert.ok(home.prendas.some(p => p.nombre === 'Vestido Lino Cruzado'));
+            assert.equal(home.pestanas[0].total, 5);                       // 5 prendas
 
             // Las tablas de apoyo también se guardaron y alimentan los filtros
             const catalogo = await vista('/catalogo');
+            assert.equal(catalogo.resultado.total, 6);                     // 5 prendas + 1 conjunto
+            assert.ok(catalogo.resultado.items.some(p => p.nombre === 'Vestido Lino Cruzado'));
             assert.deepEqual(catalogo.filtros.familiasColor.map(f => f.nombre), ['Beige', 'Blanco', 'Negro', 'Verde', 'Vino']);
             assert.deepEqual(catalogo.filtros.categorias.map(c => c.nombre), ['Blusas', 'Pantalones', 'Vestidos', 'Conjuntos']);
         });

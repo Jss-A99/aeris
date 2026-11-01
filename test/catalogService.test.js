@@ -108,12 +108,13 @@ describe('catalogService — lectura', () => {
         assert.deepEqual(pantalon.tallas, ['36', '38']);
     });
 
-    test('home separa prendas y conjuntos', async () => {
+    test('home separa prendas y conjuntos, con las categorías de las prendas en el orden de la hoja', async () => {
         const catalogo = crearCatalogService({ repositorio: repoFalso(), ahora: () => AHORA, logger: silencio });
-        const { prendas, conjuntos } = await catalogo.home();
+        const { prendas, conjuntos, categorias } = await catalogo.home();
         assert.equal(prendas.length, 3);
         assert.equal(conjuntos.length, 1);
         assert.ok(prendas.every(p => p.tipo === 'prenda'));
+        assert.deepEqual(categorias.map(c => c.nombre), ['Blusas', 'Pantalones']);   // sin Conjuntos
     });
 
     test('paginaCatalogo devuelve todo + filtros', async () => {

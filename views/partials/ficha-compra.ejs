@@ -1,0 +1,15 @@
+<%#
+  Cantidad, aviso de stock y "Agregar a la bolsa" (producto y conjunto). Recibe `p` (ProductDTO).
+  El aviso solo aparece si se intenta pedir más de lo disponible (producto.js).
+-%>
+<div class="ficha-grupo">
+    <span class="lab">Cantidad</span>
+    <div class="cant" role="group" aria-label="Cantidad">
+        <button type="button" data-menos aria-label="Quitar una">−</button>
+        <span data-cantidad aria-live="polite">1</span>
+        <button type="button" data-mas aria-label="Agregar una">+</button>
+    </div>
+</div>
+<p class="ultimas" data-aviso role="status" hidden></p>
+<button type="button" class="agregar" data-agregar<%= p.agotado ? ' disabled' : '' %>><%= p.agotado ? 'Agotado' : 'Agregar a la bolsa' %></button>
+<p class="pista" data-pista></p>

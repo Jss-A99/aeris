@@ -1,0 +1,38 @@
+<%#
+  FAVORITOS (por dentro: wishlist). View model: { pagina, title, sugerencias: ProductDTO[] }
+  Los favoritos viven en el navegador (wish-store). favoritos.js pide sus datos ACTUALES
+  (/api/bolsa/productos) y arma las tarjetas, iguales a las del catálogo: marcador (quitar)
+  y "+" para elegir color y talla (o flecha → si es un conjunto).
+-%>
+<div class="cabecera">
+    <h1 class="titulo" data-tope data-compacto><span data-ajustar>FAVORITOS</span></h1>
+    <script>aerisAjustar()</script>
+    <div class="regla"></div>
+</div>
+<%- include('../partials/pestanas-cuenta', { activa: 'favoritos' }) %>
+
+<section class="sec favoritos" aria-label="Tus favoritos">
+    <div class="grid" id="favoritos" aria-busy="true"></div>
+    <div class="vacio" id="favoritosVacio" hidden>
+        <b>Aún no tienes favoritos.</b>
+        <span>Toca el marcador de cualquier prenda para guardarla aquí.</span>
+        <a class="enlace" href="/catalogo">Ver catálogo</a>
+    </div>
+</section>
+
+<% if (sugerencias.length) { %>
+<section class="sec" aria-labelledby="t-sugerencias" id="sugerencias">
+    <div class="cab">
+        <h2 id="t-sugerencias">Te puede interesar</h2>
+        <p>Elegidas para ti entre lo que hay en la tienda.</p>
+        <a href="/catalogo">Ver catálogo</a>
+    </div>
+    <div class="grid">
+        <% sugerencias.forEach(p => { %><%- include('../partials/tarjeta', { p }) %><% }) %>
+    </div>
+</section>
+<script type="application/json" data-productos><%- jsonParaHtml(Object.fromEntries(sugerencias.map(p => [p.id, p]))) %></script>
+<% } %>
+
+<%- contentFor('scripts') %>
+<script src="/js/ui/favoritos.js"></script>

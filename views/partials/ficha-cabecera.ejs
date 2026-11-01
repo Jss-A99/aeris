@@ -1,0 +1,17 @@
+<%#
+  Cabecera de la ficha (producto y conjunto). Recibe `p` (ProductDTO) y `migas`.
+  Descuento = solo precio tachado (nunca porcentaje). "Nuevo" va debajo del precio.
+-%>
+<nav class="migas" aria-label="Estás en">
+    <% migas.migas.forEach((m, i) => { %><% if (i) { %><span aria-hidden="true">/</span><% } %><a href="<%= m.href %>"><%= m.texto %></a><% }) %>
+</nav>
+<div class="titulo-fila">
+    <h1><%= p.nombre %></h1>
+    <button type="button" class="guardar" data-wish="<%= p.id %>" aria-pressed="false" aria-label="Guardar <%= p.nombre %> en favoritos"><%- include('icono', { nombre: 'wishlist' }) %></button>
+</div>
+<div class="precio-fila">
+    <b><%= soles(p.precio) %></b>
+    <% if (p.precioAnterior !== null) { %><s><%= soles(p.precioAnterior) %></s><% } %>
+</div>
+<% if (p.esNuevo) { %><span class="ficha-nuevo">Nuevo</span><% } %>
+<% if (p.descripcion && p.descripcion.trim() !== '-') { %><p class="desc"><%= p.descripcion %></p><% } %>

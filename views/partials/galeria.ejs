@@ -1,0 +1,14 @@
+<%#
+  Galería de producto/conjunto: una foto grande y, debajo, la tira de miniaturas.
+  Recibe `fotos` (rutas, sin repetir) y `nombre`. producto.js cambia la foto grande.
+-%>
+<div class="galeria" data-galeria>
+    <div class="principal"><img src="<%= fotos[0] %>" alt="<%= nombre %>" data-principal decoding="async"></div>
+    <% if (fotos.length > 1) { %>
+    <div class="miniaturas" aria-label="Fotos de <%= nombre %>">
+        <% fotos.forEach((f, i) => { %>
+        <button type="button" data-foto="<%= f %>" aria-label="Ver foto <%= i + 1 %> de <%= fotos.length %>" aria-pressed="<%= i === 0 %>"><img src="<%= f %>" alt="" loading="lazy" decoding="async"></button>
+        <% }) %>
+    </div>
+    <% } %>
+</div>

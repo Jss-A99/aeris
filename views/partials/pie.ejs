@@ -1,0 +1,21 @@
+<footer class="pie">
+    <div class="pie-cols">
+        <div class="apilado">
+            <span class="marca-pie">AERIS<b></b></span>
+            <span>Todos los derechos reservados © <%= new Date().getFullYear() %></span>
+        </div>
+        <div class="apilado">
+            <% tienda.contacto.forEach(linea => { %><span><%= linea %></span><% }) %>
+        </div>
+        <div>
+            <% tienda.redes.forEach(red => { %>
+                <% if (red.url) { %><a href="<%= red.url %>" target="_blank" rel="noopener"><%= red.nombre %></a><% } else { %><span><%= red.nombre %></span><% } %>
+            <% }) %>
+        </div>
+        <nav aria-label="Pie de página">
+            <a href="/">Inicio</a>
+            <a href="/catalogo">Catálogo</a>
+            <a href="/nosotros">Nosotros</a>
+        </nav>
+    </div>
+</footer>

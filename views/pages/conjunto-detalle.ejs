@@ -1,0 +1,54 @@
+<%#
+  CONJUNTO. View model: { pagina, title, conjunto: ProductDTO (con .piezas), piezasSueltas: ProductDTO[], migas }
+  Cada pieza es un acordeón (+ / −): fotos de la pieza (solo para mirar), color y talla.
+  Se abre una a la vez; al completar una, pasa sola a la siguiente (producto.js).
+  Soporta cualquier cantidad de piezas.
+-%>
+<% const unicas = (lista) => [...new Set(lista.filter(Boolean))]; %>
+<% const fotos = unicas([...conjunto.galeria, ...conjunto.piezas.map(pz => pz.imagen)]); %>
+<% const n = conjunto.piezas.length; %>
+
+<div class="ficha-wrap">
+    <%- include('../partials/galeria', { fotos, nombre: conjunto.nombre }) %>
+
+    <div class="ficha" id="ficha">
+        <%- include('../partials/ficha-cabecera', { p: conjunto, migas }) %>
+        <p class="incluye">Este conjunto consta de <%= n === 1 ? 'una pieza' : `${n} piezas` %>.</p>
+
+        <div class="acordeon-piezas">
+            <% conjunto.piezas.forEach((pz, i) => { %>
+            <div class="pieza-acc" data-pieza="<%= i %>">
+                <button type="button" class="pieza-cab" data-abrir="<%= i %>" aria-expanded="false" aria-controls="cuerpo-<%= i %>">
+                    <span class="num"><%= i + 1 %>.</span><strong><%= pz.nombre %></strong><small class="pieza-resumen"></small><%- include('../partials/icono', { nombre: 'mas-menos' }) %>
+                </button>
+                <div class="pieza-cuerpo" id="cuerpo-<%= i %>" inert>
+                    <div class="pieza-interior">
+                        <div class="tira-pieza" data-tira aria-label="Fotos de <%= pz.nombre %>"></div>
+                        <div class="opciones-pieza" data-opciones="<%= i %>"></div>
+                    </div>
+                </div>
+            </div>
+            <% }) %>
+        </div>
+
+        <%- include('../partials/ficha-compra', { p: conjunto }) %>
+    </div>
+</div>
+
+<% if (piezasSueltas.length) { %>
+<section class="sec" aria-labelledby="t-sueltas">
+    <div class="cab">
+        <h2 id="t-sueltas">Piezas por separado</h2>
+        <p>¿Solo te falta una? Cada pieza también se vende sola.</p>
+    </div>
+    <div class="grid">
+        <% piezasSueltas.forEach(p => { %><%- include('../partials/tarjeta', { p }) %><% }) %>
+    </div>
+</section>
+<% } %>
+
+<script type="application/json" id="datos-producto"><%- jsonParaHtml(conjunto) %></script>
+<script type="application/json" data-productos><%- jsonParaHtml(Object.fromEntries([conjunto, ...piezasSueltas].map(p => [p.id, p]))) %></script>
+
+<%- contentFor('scripts') %>
+<script src="/js/ui/producto.js"></script>

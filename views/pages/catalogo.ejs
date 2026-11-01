@@ -1,0 +1,138 @@
+<%#
+  CATÁLOGO. View model: ver controllers/pagesController.js y utils/catalogPage.js.
+  Todo lo filtra, ordena y pagina el SERVIDOR; la pestaña, los filtros y la página viajan en la URL
+  (/catalogo?categoria=blusas&talla=M&pagina=2). El panel solo arma esa URL y cuenta resultados.
+-%>
+<% const plural = (n) => `${n} ${n === 1 ? 'artículo' : 'artículos'}`; %>
+<% const resumenOrden = consulta.orden ? ordenes.find(o => o.id === consulta.orden).nombre : ''; %>
+
+<div class="cabecera">
+    <h1 class="titulo" data-tope><span data-ajustar>CATÁLOGO</span></h1>
+    <script>aerisAjustar()</script>
+    <div class="regla"></div>
+</div>
+
+<%# Todo lo de #catalogoVivo se reemplaza sin recargar la página al cambiar de pestaña, filtro o página (catalogo.js). %>
+<div id="catalogoVivo">
+<div class="barra">
+    <div class="barra-in">
+        <nav class="tabs" aria-label="Categorías">
+            <% pestanas.forEach(t => { %>
+            <a href="<%= t.href %>"<%- t.activa ? ' aria-current="page"' : '' %>><%= t.nombre %><sup><%= t.total %></sup></a>
+            <% }) %>
+        </nav>
+        <span class="cuenta-movil"><%= plural(resultado.total) %></span>
+        <button type="button" class="btn-filtros" id="btnFiltros" aria-controls="filtros" aria-expanded="false">
+            <%- include('../partials/icono', { nombre: 'filtros' }) %>Filtros<% if (nActivos) { %><em><%= nActivos %></em><% } %>
+        </button>
+    </div>
+</div>
+
+<div class="estado<%= chips.length ? '' : ' sin-chips' %>">
+    <span class="n"><%= plural(resultado.total) %></span>
+    <% chips.forEach(c => { %>
+    <a class="chip" href="<%= c.href %>" aria-label="Quitar filtro: <%= c.texto %>"><% if (c.hex) { %><i style="background: <%= c.hex %>"></i><% } %><%= c.texto %><%- include('../partials/icono', { nombre: 'x' }) %></a>
+    <% }) %>
+    <% if (chips.length) { %><a class="limpiar" href="<%= hrefLimpiar %>">Eliminar filtros</a><% } %>
+</div>
+
+<section class="sec sec-catalogo" aria-label="Artículos">
+    <% if (resultado.items.length) { %>
+    <div class="grid">
+        <% resultado.items.forEach(p => { %><%- include('../partials/tarjeta', { p }) %><% }) %>
+    </div>
+    <% } else { %>
+    <div class="vacio">
+        <b>No hay artículos con estos filtros.</b>
+        <span>Prueba con otra talla, otro color o un rango de precio más amplio.</span>
+        <a class="enlace" href="<%= hrefLimpiar %>">Eliminar filtros</a>
+    </div>
+    <% } %>
+
+    <% if (paginacion) { %>
+    <div class="pie-grid">
+        <nav class="paginas" aria-label="Páginas">
+            <% if (paginacion.anterior) { %><a href="<%= paginacion.anterior %>" aria-label="Página anterior"><%- include('../partials/icono', { nombre: 'flecha-izq' }) %></a><% } else { %><span class="off" aria-hidden="true"><%- include('../partials/icono', { nombre: 'flecha-izq' }) %></span><% } %>
+            <% paginacion.numeros.forEach(n => { %>
+                <% if (n.salto) { %><span class="puntos" aria-hidden="true">…</span><% } else { %><a href="<%= n.href %>" aria-label="Página <%= n.n %>"<%- n.actual ? ' aria-current="page"' : '' %>><%= n.n %></a><% } %>
+            <% }) %>
+            <% if (paginacion.siguiente) { %><a href="<%= paginacion.siguiente %>" aria-label="Página siguiente"><%- include('../partials/icono', { nombre: 'flecha' }) %></a><% } else { %><span class="off" aria-hidden="true"><%- include('../partials/icono', { nombre: 'flecha' }) %></span><% } %>
+        </nav>
+        <small><%= resultado.desde + 1 %>–<%= resultado.desde + resultado.items.length %> de <%= plural(resultado.total) %></small>
+    </div>
+    <% } %>
+</section>
+
+<%# ---------- Panel de filtros (lateral en computadora, pantalla completa en celular) ---------- %>
+<div class="velo" id="velo" hidden></div>
+<form class="filtros" id="filtros" method="get" action="/catalogo" role="dialog" aria-modal="true" aria-labelledby="fTitulo" hidden>
+    <% if (consulta.categoria !== 'todo') { %><input type="hidden" name="categoria" value="<%= consulta.categoria %>"><% } %>
+    <div class="f-cab">
+        <h2 id="fTitulo"><%- include('../partials/icono', { nombre: 'filtros' }) %>Filtrar y ordenar</h2>
+        <button type="button" class="f-cerrar" id="fCerrar" aria-label="Cerrar filtros"><%- include('../partials/icono', { nombre: 'x' }) %></button>
+    </div>
+
+    <div class="f-cuerpo">
+        <div class="acc">
+            <button type="button" class="acc-cab" aria-expanded="false" aria-controls="acc-orden"><span>Ordenar por</span><small data-resumen="orden"><%= resumenOrden %></small><%- include('../partials/icono', { nombre: 'mas-menos' }) %></button>
+            <fieldset class="acc-cuerpo" id="acc-orden" hidden>
+                <legend class="oculto">Ordenar por</legend>
+                <div class="opciones una">
+                    <% ordenes.forEach(o => { %>
+                    <label class="opc"><input type="radio" name="orden" value="<%= o.id %>"<%= consulta.orden === o.id ? ' checked' : '' %>><span class="marca"></span><%= o.nombre %></label>
+                    <% }) %>
+                </div>
+            </fieldset>
+        </div>
+
+        <div class="acc">
+            <button type="button" class="acc-cab" aria-expanded="false" aria-controls="acc-talla"><span>Talla</span><small data-resumen="talla"><%= consulta.tallas.join(', ') %></small><%- include('../partials/icono', { nombre: 'mas-menos' }) %></button>
+            <fieldset class="acc-cuerpo" id="acc-talla" hidden>
+                <legend class="oculto">Talla</legend>
+                <div class="opciones cuatro">
+                    <% [...filtros.tallas.letras, ...filtros.tallas.numericas].forEach(t => { %>
+                    <label class="opc centrada"><input type="checkbox" name="talla" value="<%= t %>"<%= consulta.tallas.includes(t) ? ' checked' : '' %>><%= t %></label>
+                    <% }) %>
+                </div>
+            </fieldset>
+        </div>
+
+        <div class="acc">
+            <button type="button" class="acc-cab" aria-expanded="false" aria-controls="acc-precio"><span>Precio</span><small data-resumen="precio"></small><%- include('../partials/icono', { nombre: 'mas-menos' }) %></button>
+            <fieldset class="acc-cuerpo" id="acc-precio" hidden>
+                <legend class="oculto">Precio</legend>
+                <div class="precios"><span id="pMinTxt"><%= soles(consulta.min) %></span><span id="pMaxTxt"><%= soles(consulta.max) %></span></div>
+                <div class="rango">
+                    <div class="riel"><i id="rielSel"></i></div>
+                    <input type="range" name="min" id="pMin" min="<%= filtros.precio.min %>" max="<%= filtros.precio.max %>" step="1" value="<%= consulta.min %>" aria-label="Precio mínimo">
+                    <input type="range" name="max" id="pMax" min="<%= filtros.precio.min %>" max="<%= filtros.precio.max %>" step="1" value="<%= consulta.max %>" aria-label="Precio máximo">
+                </div>
+            </fieldset>
+        </div>
+
+        <div class="acc">
+            <button type="button" class="acc-cab" aria-expanded="false" aria-controls="acc-color"><span>Color</span><small data-resumen="color"></small><%- include('../partials/icono', { nombre: 'mas-menos' }) %></button>
+            <fieldset class="acc-cuerpo" id="acc-color" hidden>
+                <legend class="oculto">Color</legend>
+                <div class="opciones">
+                    <% filtros.familiasColor.forEach(f => { %>
+                    <label class="opc"><input type="checkbox" name="color" value="<%= f.id %>" data-nombre="<%= f.nombre %>"<%= consulta.colores.includes(f.id) ? ' checked' : '' %>><% if (f.hex) { %><span class="muestra" style="background: <%= f.hex %>"></span><% } %><%= f.nombre %></label>
+                    <% }) %>
+                </div>
+            </fieldset>
+        </div>
+    </div>
+
+    <div class="f-pie">
+        <button type="submit" class="f-ver" id="fVer">Ver resultados (<%= resultado.total %>)</button>
+        <a class="f-limpiar" id="fLimpiar" href="<%= hrefLimpiar %>">Eliminar filtros (<%= nActivos %>)</a>
+    </div>
+</form>
+
+<script type="application/json" id="datos-filtro"><%- jsonParaHtml({ filtros, productos: datosConteo, categoria: consulta.categoria }) %></script>
+<script type="application/json" data-productos><%- jsonParaHtml(Object.fromEntries(resultado.items.map(p => [p.id, p]))) %></script>
+</div>
+
+<%- contentFor('scripts') %>
+<script src="/js/core/catalog-query.js"></script>
+<script src="/js/ui/catalogo.js"></script>

@@ -1,0 +1,20 @@
+<%#
+  Íconos de línea (trazo cuadrado). Uso: include('../partials/icono', { nombre: 'bolsa' })
+  Todos son decorativos (aria-hidden): el texto accesible va en el botón o enlace.
+-%>
+<% switch (nombre) {
+  case 'wishlist': %><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg><% break;
+  case 'bolsa': %><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16v13H4z"/><path d="M8.5 8V6a3.5 3.5 0 0 1 7 0v2"/></svg><% break;
+  case 'menu': %><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16M4 15h16"/></svg><% break;
+  case 'mas': %><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v12M2 8h12"/></svg><% break;
+  case 'mas-menos': %><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 8h14"/><path class="v" d="M8 1v14"/></svg><% break;
+  case 'whatsapp-logo': %><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 0 0-7.8 13.5L3 21l4.6-1.2A9 9 0 1 0 12 3z"/><path d="M9 8.2c.3-.4.7-.4 1-.1l.9 1.6c.2.3.1.6-.1.9l-.5.6c.6 1.2 1.6 2.2 2.8 2.8l.6-.5c.3-.2.6-.3.9-.1l1.6.9c.3.3.3.7-.1 1-.9.9-2 1.1-3.1.6-2.2-1-4-2.8-5-5-.5-1.1-.3-2.2.6-3.1z" fill="currentColor" stroke="none"/></svg><% break;
+  case 'flecha': %><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h12M9 3l5 5-5 5"/></svg><% break;
+  case 'flecha-izq': %><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M14 8H2M7 3L2 8l5 5"/></svg><% break;
+  case 'x': %><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"/></svg><% break;
+  case 'filtros': %><svg class="i" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 6h14M3 14h14"/><path d="M7 3.5v5M13 11.5v5"/></svg><% break;
+  case 'envio': %><svg class="i" viewBox="0 0 48 48" aria-hidden="true"><path d="M4 12h24v20H4z"/><path d="M28 19h9l7 7v6H28z"/><circle cx="12" cy="35" r="4"/><circle cx="36" cy="35" r="4"/></svg><% break;
+  case 'whatsapp': %><svg class="i" viewBox="0 0 48 48" aria-hidden="true"><path d="M6 8h36v24H18l-8 8v-8H6z"/><path d="M15 17h18M15 23h12"/></svg><% break;
+  case 'cambios': %><svg class="i" viewBox="0 0 48 48" aria-hidden="true"><path d="M8 17h30l-7-7"/><path d="M40 31H10l7 7"/></svg><% break;
+  case 'lima': %><svg class="i" viewBox="0 0 48 48" aria-hidden="true"><path d="M24 43S11 31 11 20a13 13 0 0 1 26 0c0 11-13 23-13 23z"/><path d="M20 16h8v8h-8z"/></svg><% break;
+} %>

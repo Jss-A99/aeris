@@ -1,0 +1,59 @@
+<%#
+  NOSOTROS. View model: { pagina, title }. Todo el contenido sale de config/tienda.js
+  (nosotros, ubicacion, whatsapp, redes).
+   - Apertura "Revista": foto vertical y, al lado, la frase como cita, el texto y la firma.
+   - Ubícanos "Portada": mapa de Google Maps con el punto de la tienda y, al lado, dirección,
+     horario, WhatsApp y redes.
+-%>
+<% const h = tienda.nosotros, u = tienda.ubicacion; %>
+<% const numero = String(tienda.whatsapp || ''); %>
+<% const numeroVisible = numero.length === 11 ? `+${numero.slice(0, 2)} ${numero.slice(2, 5)} ${numero.slice(5, 8)} ${numero.slice(8)}` : (numero ? '+' + numero : ''); %>
+<% const mapaEmbed = `https://www.google.com/maps?q=${encodeURIComponent(u.mapa)}&z=16&output=embed`; %>
+<% const comoLlegar = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(u.mapa)}`; %>
+
+<div class="cabecera">
+    <h1 class="titulo" data-tope><span data-ajustar>NOSOTROS</span></h1>
+    <script>aerisAjustar()</script>
+    <div class="regla"></div>
+</div>
+
+<section class="historia" aria-labelledby="t-historia">
+    <figure class="foto-ed">
+        <% if (h.imagen) { %><img src="<%= h.imagen %>" alt="" decoding="async"><% } %>
+        <% if (h.pieDeFoto) { %><figcaption><%= h.pieDeFoto %></figcaption><% } %>
+    </figure>
+    <div class="historia-texto">
+        <span class="eti" id="t-historia"><%= h.etiqueta %></span>
+        <blockquote class="frase"><p>“<%= h.frase %>”</p></blockquote>
+        <p class="cuerpo-txt"><%= h.texto %></p>
+        <% if (h.firma) { %><span class="firma">— <%= h.firma %></span><% } %>
+    </div>
+</section>
+
+<section class="sec" aria-labelledby="t-ubicanos">
+    <div class="cab">
+        <h2 id="t-ubicanos">Ubícanos</h2>
+        <p><%= u.invitacion %></p>
+        <a href="<%= comoLlegar %>" target="_blank" rel="noopener">Cómo llegar</a>
+    </div>
+    <div class="ubica">
+        <div class="mapa">
+            <iframe src="<%= mapaEmbed %>" title="Mapa con la ubicación de AERIS" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+        </div>
+        <aside class="ubica-datos">
+            <div class="dato"><span class="eti">Dirección</span><p><% u.direccion.forEach((l, i) => { %><%= l %><% if (i < u.direccion.length - 1) { %><br><% } %><% }) %></p></div>
+            <div class="dato"><span class="eti">Horario</span><p><%= u.horario %></p></div>
+            <% if (numero) { %>
+            <div class="dato"><span class="eti">WhatsApp</span><p><%= numeroVisible %></p></div>
+            <a class="btn btn-wa" href="https://wa.me/<%= numero %>?text=<%= encodeURIComponent('Hola AERIS') %>" target="_blank" rel="noopener"><%- include('../partials/icono', { nombre: 'whatsapp-logo' }) %>Escríbenos por WhatsApp</a>
+            <% } %>
+            <div class="dato"><span class="eti">Síguenos</span>
+                <div class="redes">
+                    <% tienda.redes.forEach(r => { %>
+                    <% if (r.url) { %><a href="<%= r.url %>" target="_blank" rel="noopener"><%= r.nombre %></a><% } else { %><span><%= r.nombre %></span><% } %>
+                    <% }) %>
+                </div>
+            </div>
+        </aside>
+    </div>
+</section>

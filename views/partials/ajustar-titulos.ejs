@@ -1,0 +1,62 @@
+<%#
+  Títulos a todo el ancho (AERIS, CATÁLOGO, TU BOLSA). Va en el <head>, después del CSS, y cada
+  página lo llama justo después de su título (<script>aerisAjustar()</script>): así el título se
+  ajusta ANTES de pintarse y no se ve primero fuera de medida. El resto de la página no espera nada.
+   - El tamaño se pone en el CONTENEDOR del texto, para que el espaciado entre letras (en "em")
+     se calcule con el mismo tamaño que la palabra.
+   - [data-tope]: lo más alto de las letras (tilde incluida) queda justo bajo la navbar.
+   - [data-compacto] (Tu bolsa, Favoritos): no pasa del 22 % del alto de la pantalla, para que
+     el contenido suba; se alinea a la izquierda.
+   - Si la tipografía aún no está lista (primera visita), solo el título espera a que llegue
+     (máx. 1,2 s) y aparece con un fundido corto.
+-%>
+<script>
+(function () {
+    var raiz = document.documentElement;
+    raiz.classList.add('js');
+    var FUENTE = '800 1em "Plus Jakarta Sans"';
+    var lienzo = document.createElement('canvas').getContext('2d');
+
+    function alinearArriba(caja, el) {
+        var cs = getComputedStyle(caja);
+        var alto = parseFloat(cs.lineHeight);
+        if (!lienzo || !isFinite(alto)) return;
+        lienzo.font = cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily;
+        var m = lienzo.measureText(el.textContent);
+        if (!(m.fontBoundingBoxAscent > 0)) return;
+        var aire = (alto - m.fontBoundingBoxAscent - m.fontBoundingBoxDescent) / 2 + m.fontBoundingBoxAscent - m.actualBoundingBoxAscent;
+        caja.style.marginTop = (-aire) + 'px';
+    }
+
+    function ajustar() {
+        var lista = document.querySelectorAll('[data-ajustar]');
+        for (var i = 0; i < lista.length; i++) {
+            var el = lista[i], caja = el.parentElement, cs = getComputedStyle(caja);
+            var disponible = caja.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+            caja.style.fontSize = '100px';
+            var ancho = el.getBoundingClientRect().width;
+            if (ancho > 0 && disponible > 0) {
+                var tam = 100 * disponible / ancho;
+                if (caja.hasAttribute('data-compacto')) tam = Math.min(tam, window.innerHeight * 0.22 / 0.86);
+                caja.style.fontSize = tam + 'px';
+            }
+            if (caja.hasAttribute('data-tope')) alinearArriba(caja, el);
+        }
+    }
+
+    function mostrar() { raiz.classList.add('fuente-lista'); }
+
+    window.aerisAjustar = function () {
+        ajustar();
+        if (!document.fonts || document.fonts.check(FUENTE)) mostrar();
+    };
+
+    if (document.fonts) {
+        document.fonts.load(FUENTE).then(function () { ajustar(); mostrar(); }, mostrar);
+        setTimeout(mostrar, 1200);          // por seguridad: el título nunca queda oculto
+    } else {
+        mostrar();
+    }
+    window.addEventListener('resize', ajustar);
+})();
+</script>

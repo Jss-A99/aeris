@@ -1,0 +1,26 @@
+<%#
+  Tarjeta de producto o conjunto. Recibe `p` (ProductDTO).
+   - Prenda con stock: botón + que abre el selector de color y talla (tienda.js).
+   - Conjunto: flecha que lleva a su página (ahí se elige por pieza).
+   - Agotado: sin botón, foto atenuada y texto "Agotado".
+   - "Nuevo" va en rubí debajo del precio, nunca sobre la foto.
+  Los datos para el selector viajan aparte, en <script type="application/json" data-productos>.
+-%>
+<% const esConjunto = p.tipo === 'conjunto'; %>
+<article class="card<%= p.agotado ? ' agotada' : '' %>" data-id="<%= p.id %>">
+    <div class="foto">
+        <a href="<%= p.url %>" tabindex="-1" aria-hidden="true"><img src="<%= p.imagen %>" alt="" loading="lazy" decoding="async" data-foto></a>
+        <button type="button" class="guardar" data-wish="<%= p.id %>" aria-pressed="false" aria-label="Guardar <%= p.nombre %> en favoritos"><%- include('icono', { nombre: 'wishlist' }) %></button>
+    </div>
+    <div class="fila">
+        <a class="nombre" href="<%= p.url %>"><%= p.nombre %></a>
+        <% if (esConjunto) { %>
+        <a class="mas" href="<%= p.url %>" aria-label="Ver conjunto <%= p.nombre %>"><%- include('icono', { nombre: 'flecha' }) %></a>
+        <% } else if (!p.agotado) { %>
+        <button type="button" class="mas" data-abrir="<%= p.id %>" aria-expanded="false" aria-label="Elegir color y talla de <%= p.nombre %>"><%- include('icono', { nombre: 'mas' }) %></button>
+        <% } %>
+    </div>
+    <span class="precio"><%= soles(p.precio) %><% if (p.precioAnterior !== null) { %><s><%= soles(p.precioAnterior) %></s><% } %></span>
+    <% if (esConjunto) { %><span class="nota">Conjunto · <%= p.piezas.length %> piezas</span><% } %>
+    <% if (p.agotado) { %><span class="nota">Agotado</span><% } else if (p.esNuevo) { %><span class="nota nuevo">Nuevo</span><% } %>
+</article>

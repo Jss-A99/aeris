@@ -125,88 +125,11 @@ describe('buildCartItem — conjunto', () => {
     });
 });
 
-describe('migración de lo que ya hay en el localStorage de los clientes', () => {
-    const ORIGEN = 'http://localhost:3001';
-
-    test('forma de main.js: "Único/Única" → null y URL absoluta → relativa', () => {
-        const item = C.normalizeCartItem({
-            id: 'abc', titulo: 'Blusa', color: 'Único', talla: 'Única', precio: '120.5', cantidad: 2,
-            imagen: `${ORIGEN}/images/productos/b.jpg`
-        }, { origen: ORIGEN });
-
-        assert.equal(item.color, null);
-        assert.equal(item.talla, null);
-        assert.equal(item.precio, 120.5);
-        assert.equal(item.imagen, '/images/productos/b.jpg');
-        assert.equal(item.url, '/producto/abc');
-        assert.equal(item.key, 'p:abc::');
-    });
-
-    test('forma de conjunto-detalle.js se conserva', () => {
-        const item = C.normalizeCartItem({
-            id: 'k1', tipo: 'conjunto', titulo: 'Noir', precio: 250, imagen: '/images/productos/n.jpg', cantidad: 1, timestamp: 1700000000000,
-            componentes: [{ id: 'p1', nombre: 'Blusa', color: 'Negro', talla: 'M' }, { id: 'p2', nombre: 'Pantalón', color: 'Único', talla: '38' }]
-        }, { origen: ORIGEN });
-
-        assert.equal(item.tipo, 'conjunto');
-        assert.equal(item.addedAt, 1700000000000);
-        assert.equal(item.componentes[1].color, null);
-        assert.equal(item.url, '/conjunto/k1');
-    });
-
-    test('forma del bottom sheet (piezas por índice) se recupera como conjunto', () => {
-        const item = C.normalizeCartItem({
-            id: 'k2', esConjunto: true, titulo: 'Noir', precio: 250,
-            piezas: [{ piezaIndex: 1, color: 'Negro', talla: 'M' }, { piezaIndex: 2, color: 'Beige', talla: '38' }]
-        }, { origen: ORIGEN });
-
-        assert.equal(item.tipo, 'conjunto');
-        assert.deepEqual(item.componentes.map(c => c.nombre), ['Pieza 1', 'Pieza 2']);
-    });
-
-    test('imagen suelta se completa; otro dominio se respeta; sin id → null', () => {
-        assert.equal(C.normalizeCartItem({ id: '1', imagen: 'x.jpg' }, { origen: ORIGEN }).imagen, '/images/productos/x.jpg');
-        assert.equal(C.normalizeCartItem({ id: '1', imagen: 'https://cdn.com/x.jpg' }, { origen: ORIGEN }).imagen, 'https://cdn.com/x.jpg');
-        assert.equal(C.normalizeCartItem({ titulo: 'sin id' }, { origen: ORIGEN }), null);
-        assert.equal(C.normalizeCartItem(null, { origen: ORIGEN }), null);
-        assert.equal(C.normalizeCartItem('texto', { origen: ORIGEN }), null);
-    });
-
-    test('migrateCart fusiona duplicados sumando cantidad y cuenta los descartados', () => {
-        const { items, descartados } = C.migrateCart([
-            { id: 'a', color: 'Negro', talla: 'm', precio: 10, cantidad: 1 },
-            { id: 'a', color: 'negro', talla: 'M', precio: 10, cantidad: 2 },
-            { id: 'a', color: 'Blanco', talla: 'M', precio: 10, cantidad: 1 },
-            { sinId: true },
-            null
-        ], { origen: ORIGEN });
-
-        assert.equal(items.length, 2);
-        assert.equal(items.find(i => i.color === 'Negro').cantidad, 3);
-        assert.equal(descartados, 2);
-        assert.deepEqual(C.migrateCart('no-es-lista').items, []);
-    });
-});
-
-describe('FavItem', () => {
-    test('buildFavItem guarda el tipo (para enlazar bien los conjuntos)', () => {
-        const fav = C.buildFavItem(conjunto());
+describe('WishItem', () => {
+    test('buildWishItem guarda el tipo (para enlazar bien los conjuntos)', () => {
+        const fav = C.buildWishItem(conjunto());
         assert.equal(fav.tipo, 'conjunto');
         assert.equal(fav.url, '/conjunto/3-conjunto-noir');
         assert.equal(fav.imagen, '/images/productos/noir.jpg');
-    });
-
-    test('migrateFavorites acepta ids sueltos y objetos antiguos, sin duplicados', () => {
-        const favs = C.migrateFavorites([
-            'id-1',
-            { id: 'id-1', titulo: 'duplicado' },
-            { id: 'id-2', titulo: 'Blusa', precio: 50, imagen: 'b.jpg' },
-            { titulo: 'sin id' },
-            null
-        ], { origen: null });
-
-        assert.deepEqual(favs.map(f => f.id), ['id-1', 'id-2']);
-        assert.equal(favs[1].imagen, '/images/productos/b.jpg');
-        assert.equal(favs[0].url, '/producto/id-1');
     });
 });

@@ -60,7 +60,7 @@ describe('productRepository — operaciones contra Mongo', () => {
         const { Producto, Meta, registro } = modelosFalsos();
         await crearProductRepository({ Producto, Meta }).guardarMeta(meta);
         assert.deepEqual(registro.replaceOne.filtro, { _id: 'tablas' });
-        assert.deepEqual(registro.replaceOne.doc, { categorias: meta.categorias, familiasColor: meta.familiasColor, tallas: meta.tallas });
+        assert.deepEqual(registro.replaceOne.doc, { categorias: meta.categorias, familiasColor: meta.familiasColor, tallas: meta.tallas, promociones: meta.promociones });
         assert.deepEqual(registro.replaceOne.opciones, { upsert: true });
     });
 
@@ -70,7 +70,7 @@ describe('productRepository — operaciones contra Mongo', () => {
         assert.equal(guardada.registro.findById, 'tablas');
 
         const vacia = modelosFalsos({ metaGuardada: null });
-        assert.deepEqual(await crearProductRepository(vacia).leerMeta(), { categorias: [], familiasColor: [], tallas: [] });
+        assert.deepEqual(await crearProductRepository(vacia).leerMeta(), { categorias: [], familiasColor: [], tallas: [], promociones: [] });
     });
 });
 

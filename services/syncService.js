@@ -3,7 +3,8 @@
  *
  * Sincroniza el catálogo desde Google Sheets (vía Apps Script) hacia MongoDB.
  *
- *   { productos, variantes, categorias, familiasColor, tallas }   (filas de las 5 pestañas)
+ *   { productos, variantes, categorias, familiasColor, tallas, promociones? }   (filas de las pestañas;
+ *   PROMOCIONES es opcional: si no se envía, no hay códigos activos)
  *        → construirCatalogo()   PURA: valida TODO y convierte filas en documentos
  *        → si hay errores: se rechaza el envío completo y NO se toca Mongo
  *        → si no: upsert de los publicados + tablas de apoyo + borrado de lo que sobre
@@ -20,6 +21,8 @@
  *  - Las filas que solo tienen casillas (Nuevo/Publicado en FALSE hasta la fila 1000)
  *    se ignoran en silencio.
  */
+
+const { normalizarCodigo } = require('../utils/promo');
 
 const MAX_MENSAJES = 30;
 
@@ -110,6 +113,26 @@ function parsearProductosIncluidos(raw) {
         .filter(id => Number.isInteger(id) && id > 0);
 }
 
+/**
+ * Fecha de la hoja → "AAAA-MM-DD" (día en Lima). null si está vacía; undefined si no se entiende.
+ * Acepta: celda de fecha enviada por nuestro Apps Script ("2026-12-31T00:00:00.000Z" = el día que
+ * se ve en la hoja), texto "31/12/2026" o "2026-12-31", y cualquier otra fecha ISO (se pasa a hora de Lima).
+ */
+function fechaLima(v) {
+    if (v === null || v === undefined || texto(v) === '') return null;
+    const s = texto(v);
+    let m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+    if (m) return s;
+    // Así envía las fechas nuestro Apps Script: el día que SE VE en la hoja, con hora 00:00 "Z".
+    m = /^(\d{4}-\d{2}-\d{2})T00:00:00(\.000)?Z$/.exec(s);
+    if (m) return m[1];
+    m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s);
+    if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+    const ms = Date.parse(s);
+    if (Number.isNaN(ms)) return undefined;
+    return new Date(ms - 5 * 3600 * 1000).toISOString().slice(0, 10);
+}
+
 /* ----------------------------------------------------------------------------
    Construcción y validación
    ---------------------------------------------------------------------------- */
@@ -194,6 +217,46 @@ function construirCatalogo(cuerpo) {
             familiaPorId.set(id, fam);
         });
         if (familiasColor.length === 0) error('FAMILIAS COLOR está vacía: define al menos una familia.');
+    }
+
+    /* ---------- PROMOCIONES (opcional) ---------- */
+    const promociones = [];
+    {
+        const filas = filasDe(cuerpo.promociones);
+        if (filas.some(f => !esFilaVacia(f))) exigirColumnas('PROMOCIONES', filas, ['Código', 'Tipo', 'Valor']);
+        const vistos = new Set();
+        filas.forEach((f, i) => {
+            if (esFilaVacia(f)) return;
+            const leer = lector(f);
+            const donde = `PROMOCIONES fila ${numeroDeFila(f, i)}`;
+            const codigo = normalizarCodigo(leer('Código'));
+            if (!codigo) { error(`${donde}: falta el código.`); return; }
+            if (vistos.has(codigo)) { error(`${donde}: el código "${codigo}" está repetido.`); return; }
+            vistos.add(codigo);
+
+            const tipoTxt = clave(texto(leer('Tipo')));
+            const tipo = tipoTxt.startsWith('porc') ? 'porcentaje' : tipoTxt.startsWith('mont') ? 'monto' : null;
+            if (!tipo) { error(`${donde}: el tipo "${texto(leer('Tipo'))}" no es válido (usa Porcentaje o Monto).`); return; }
+
+            const valor = numero(leer('Valor'));
+            if (!(valor > 0) || (tipo === 'porcentaje' && valor > 100)) {
+                error(`${donde}: el valor de "${codigo}" debe ser mayor que 0${tipo === 'porcentaje' ? ' y como máximo 100' : ''}.`);
+                return;
+            }
+            const minimoRaw = numero(leer('Compra mínima', 'Compra minima', 'Mínimo'));
+            if (Number.isFinite(minimoRaw) && minimoRaw < 0) { error(`${donde}: la compra mínima no puede ser negativa.`); return; }
+
+            const vence = fechaLima(leer('Vence', 'Vencimiento'));
+            if (vence === undefined) { error(`${donde}: la fecha "${texto(leer('Vence', 'Vencimiento'))}" no es válida (ej. 31/12/2026).`); return; }
+
+            const activoRaw = leer('Activo');
+            promociones.push({
+                codigo, tipo, valor,
+                minimo: Number.isFinite(minimoRaw) ? minimoRaw : 0,
+                vence,
+                activo: activoRaw === undefined || activoRaw === '' ? true : booleano(activoRaw)
+            });
+        });
     }
 
     /* ---------- TALLAS ---------- */
@@ -412,7 +475,7 @@ function construirCatalogo(cuerpo) {
 
     return {
         documentos,
-        meta: { categorias, familiasColor, tallas },
+        meta: { categorias, familiasColor, tallas, promociones },
         errores,
         advertencias,
         resumen: { publicados: publicados.length, noPublicados: productos.size - publicados.length }
