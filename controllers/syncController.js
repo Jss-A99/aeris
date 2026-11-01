@@ -3,20 +3,52 @@
  * Capa HTTP delgada: traduce la petición a syncService y el resultado a JSON.
  * La lógica vive en services/syncService.js.
  */
+const fs = require('fs');
 const { sincronizar, ErrorSync } = require('../services/syncService');
+
+const MAX_AVISOS_FOTOS = 10;
+
+/**
+ * Fotos que la hoja menciona pero no están ni sincronizadas desde Drive ni en /public.
+ * Es solo un aviso: no impide guardar.
+ */
+async function fotosFaltantes({ catalogo, fotos, dirFotos }) {
+    if (!fotos) return [];
+    const disponibles = new Set(await fotos.nombres());
+    try { fs.readdirSync(dirFotos).forEach(n => disponibles.add(n)); } catch (e) { /* sin carpeta local */ }
+    const mencionadas = new Set();
+    const anotar = (ruta) => {
+        const m = /^\/images\/productos\/([^/?#]+)$/.exec(ruta || '');
+        if (m) mencionadas.add(decodeURIComponent(m[1]));
+    };
+    (await catalogo.todos()).forEach(p => {
+        p.galeria.forEach(anotar);
+        p.colores.forEach(c => anotar(c.imagen));
+        p.variantes.forEach(v => anotar(v.imagen));
+    });
+    const faltan = [...mencionadas].filter(n => !disponibles.has(n)).sort();
+    const avisos = faltan.slice(0, MAX_AVISOS_FOTOS).map(n => `Falta la foto "${n}" en la carpeta PRODUCTOS de Drive (o el nombre no coincide con la hoja).`);
+    if (faltan.length > MAX_AVISOS_FOTOS) avisos.push(`... y ${faltan.length - MAX_AVISOS_FOTOS} fotos más.`);
+    return avisos;
+}
 
 /**
  * @param {Object} deps
  * @param {Object} deps.repositorio
- * @param {{ invalidar: () => void }} deps.catalogo   Para refrescar la caché tras sincronizar.
+ * @param {{ invalidar: () => void, todos: Function }} deps.catalogo   Para refrescar la caché tras sincronizar.
+ * @param {Object} [deps.fotos]     fotoService: para avisar de fotos que faltan
+ * @param {string} [deps.dirFotos]  carpeta local de fotos (public/images/productos)
  */
-function crearSyncController({ repositorio, catalogo }) {
+function crearSyncController({ repositorio, catalogo, fotos, dirFotos }) {
     return {
         async sincronizarCatalogo(req, res) {
             const cuerpo = req.body || {};
             try {
                 const resultado = await sincronizar(cuerpo, { repositorio });
                 catalogo.invalidar();
+                try {
+                    resultado.advertencias = [...resultado.advertencias, ...await fotosFaltantes({ catalogo, fotos, dirFotos })];
+                } catch (e) { /* el aviso de fotos nunca hace fallar el sync */ }
 
                 console.log(`[AERIS SYNC] ${resultado.publicados} publicados, ${resultado.eliminados} eliminados, ${resultado.advertencias.length} advertencias.`);
                 return res.status(200).json({

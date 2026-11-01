@@ -24,6 +24,8 @@ const { crearCatalogService } = require('./services/catalogService');
 const { crearPagesController } = require('./controllers/pagesController');
 const { crearSyncController } = require('./controllers/syncController');
 const { crearBolsaController } = require('./controllers/bolsaController');
+const { crearFotosController } = require('./controllers/fotosController');
+const { crearFotoService } = require('./services/fotoService');
 const { crearSyncRoutes } = require('./routes/syncRoutes');
 const { crearRutas } = require('./routes/index');
 const { jsonParaHtml } = require('./utils/safeJson');
@@ -36,6 +38,8 @@ const { soles } = require('./utils/formato');
  * @param {string} [opciones.viewsDir]     Por defecto ./views
  * @param {boolean} [opciones.layouts=true] Usa express-ejs-layouts (views/layout.ejs).
  * @param {number} [opciones.ttlCatalogoMs]
+ * @param {Object} [opciones.fotoRepositorio] Por defecto, el de MongoDB (o uno vacío en memoria si se
+ *                                            inyectó `repositorio`, es decir, en pruebas).
  */
 function crearApp(opciones = {}) {
     const repositorio = opciones.repositorio || require('./repositories/productRepository');
@@ -43,6 +47,11 @@ function crearApp(opciones = {}) {
         ? opciones.ttlCatalogoMs
         : (Number(process.env.CATALOG_TTL_MS) || 60 * 1000);
     const catalogo = opciones.catalogo || crearCatalogService({ repositorio, ttlMs });
+    const repoFotos = require('./repositories/fotoRepository');
+    const fotoRepositorio = opciones.fotoRepositorio
+        || (opciones.repositorio ? repoFotos.crearFotoRepositoryMemoria() : repoFotos);
+    const fotos = crearFotoService({ repositorio: fotoRepositorio });
+    const fotosController = crearFotosController({ fotos });
 
     const app = express();
 
@@ -65,14 +74,17 @@ function crearApp(opciones = {}) {
         next();
     });
 
+    // Fotos de productos: primero las sincronizadas desde Drive (MongoDB); si no está, /public.
+    app.get('/images/productos/:nombre', fotosController.servir);
+
     app.use(express.static(path.join(__dirname, 'public'), {
         maxAge: process.env.NODE_ENV === 'production' ? '1h' : 0
     }));
 
     const pages = crearPagesController({ catalogo });
-    const syncController = crearSyncController({ repositorio, catalogo });
+    const syncController = crearSyncController({ repositorio, catalogo, fotos, dirFotos: path.join(__dirname, 'public', 'images', 'productos') });
     const bolsa = crearBolsaController({ catalogo });
-    app.use('/', crearRutas({ pages, bolsa, syncRouter: crearSyncRoutes(syncController) }));
+    app.use('/', crearRutas({ pages, bolsa, syncRouter: crearSyncRoutes(syncController, fotosController) }));
 
     app.use(handle404);
     app.use(handleErrors);

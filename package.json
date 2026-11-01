@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "fotos": "node scripts/fotos.js",
-    "test": "node --test test/productNormalizer.test.js test/contracts.test.js test/stores.test.js test/catalogQuery.test.js test/views.test.js test/bolsa.test.js test/ficha.test.js test/syncToken.test.js test/catalogService.test.js test/catalogFacets.test.js test/syncService.test.js test/routes.test.js test/realData.test.js test/productRepository.test.js"
+    "test": "node --test test/productNormalizer.test.js test/contracts.test.js test/stores.test.js test/catalogQuery.test.js test/views.test.js test/bolsa.test.js test/ficha.test.js test/fotos.test.js test/syncToken.test.js test/catalogService.test.js test/catalogFacets.test.js test/syncService.test.js test/routes.test.js test/realData.test.js test/productRepository.test.js"
   },
   "keywords": [],
   "author": "",
