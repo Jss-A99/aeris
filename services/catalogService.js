@@ -121,6 +121,12 @@ function crearCatalogService({ repositorio, ttlMs = 60 * 1000, ahora = Date.now,
                 .slice(0, limite);
         },
 
+        /** Banners del inicio (pestaña BANNERS): solo los activos, ya ordenados. */
+        async banners() {
+            const { meta } = await obtener();
+            return (meta && meta.banners) || [];
+        },
+
         /** Códigos promocionales (solo para validar en el servidor; nunca se envían al navegador). */
         async promociones() {
             const { meta } = await obtener();

@@ -18,15 +18,11 @@ module.exports = Object.freeze({
     envio: ENVIO,
 
     /**
-     * Banners del hero. `imagen` es una ruta en /public (por ejemplo '/images/hero/primavera.jpg');
-     * si es null se muestra un fondo liso. Conviene que la parte de abajo de la foto sea clara:
-     * ahí va AERIS en rubí.
+     * Direcciones de la propia tienda. Un enlace de banner que apunte a ellas se guarda sin el
+     * dominio (/conjunto/12-…): así sigue sirviendo si algún día se conecta un dominio propio.
+     * (Los banners del inicio salen de la pestaña BANNERS de la hoja.)
      */
-    hero: [
-        { titulo: 'Colección Primavera 2026', enlace: '/catalogo?orden=nuevo', textoEnlace: 'Ver colección', imagen: null },
-        { titulo: 'Descuentos de temporada', enlace: '/catalogo?categoria=descuentos', textoEnlace: 'Ver descuentos', imagen: null },
-        { titulo: 'Conjuntos', enlace: '/catalogo?categoria=conjuntos', textoEnlace: 'Ver conjuntos', imagen: null }
-    ],
+    dominios: ['aeris-pe.onrender.com'],
 
     /** Franja "Comprar en AERIS es simple". `icono`: envio | whatsapp | cambios | Perú */
     ventajas: [

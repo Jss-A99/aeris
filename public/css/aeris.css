@@ -127,6 +127,11 @@ main { display: block; }
 .slide { position: absolute; inset: 0; opacity: 0; transition: opacity var(--r-lento) ease; background: linear-gradient(180deg, #E4E0DC 0%, #D3CCC6 100%) center / cover no-repeat; }
 .slide[style] { background-color: var(--a-foto); }
 .slide.on { opacity: 1; }
+/* Banner con enlace: toda la imagen es el enlace (solo el visible recibe clics) */
+a.slide { display: block; pointer-events: none; }
+a.slide.on { pointer-events: auto; cursor: pointer; }
+a.slide:focus-visible { outline: 2px solid var(--a-acento); outline-offset: -6px; }
+.marca-grande { pointer-events: none; }
 .leyenda { position: absolute; left: var(--pad); right: var(--pad); top: calc(var(--alto-nav) + 24px); z-index: 2; display: flex; justify-content: space-between; align-items: center; gap: 16px; font-size: var(--t-s); font-weight: 500; }
 .leyenda .num { font-variant-numeric: tabular-nums; margin-right: 10px; }
 .leyenda .ir { border-bottom: 1.5px solid currentColor; margin-left: 10px; text-decoration: none; }

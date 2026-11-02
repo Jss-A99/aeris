@@ -1,25 +1,38 @@
 <%#
-  INICIO. View model: { pagina, title, pestanas: [{id,nombre,total,items}], looks: ProductDTO[] }
+  INICIO. View model: { pagina, title, banners: Banner[], pestanas: [{id,nombre,total,items}], looks: ProductDTO[] }
   Las 8 prendas de cada pestaña ya vienen elegidas al azar por el servidor (utils/homeSelection.js).
 -%>
 <% const dos = (n) => String(n).padStart(2, '0'); %>
-<% const banners = tienda.hero; %>
+<%#
+  Banners (pestaña BANNERS de la hoja, solo los activos y ya ordenados). Cada uno puede ser solo
+  imagen, o llevar título, enlace y texto del enlace (independientes). Con enlace, toda la imagen
+  lleva a esa dirección; el texto del enlace es opcional. Sin banners: fondo liso.
+-%>
+<% const lista = banners.length ? banners : [{ imagen: null, titulo: '', enlace: null, externo: false, textoEnlace: '' }]; %>
+<% const primero = lista[0]; %>
+<% const conLeyenda = lista.length > 1 || primero.titulo || (primero.enlace && primero.textoEnlace); %>
 
 <section class="hero" id="hero" aria-label="Novedades">
-    <% banners.forEach((b, i) => { %>
-    <div class="slide<%= i === 0 ? ' on' : '' %>"<% if (b.imagen) { %> style="background-image: url('<%= b.imagen %>')"<% } %>
-         data-titulo="<%= b.titulo %>" data-enlace="<%= b.enlace %>" data-texto-enlace="<%= b.textoEnlace %>"<%= i === 0 ? '' : ' aria-hidden=true' %>></div>
-    <% }) %>
-    <% if (banners.length > 1) { %>
-    <div class="barras" aria-hidden="true"><% banners.forEach((b, i) => { %><i<%- i === 0 ? ' class="on"' : '' %>></i><% }) %></div>
+    <% lista.forEach((b, i) => {
+        const atributos = `class="slide${i === 0 ? ' on' : ''}"`;
+        const fondo = b.imagen ? ` style="background-image: url('${encodeURI(b.imagen)}')"` : ''; %>
+    <% if (b.enlace) { %>
+    <a <%- atributos %><%- fondo %> href="<%= b.enlace %>"<%- b.externo ? ' target="_blank" rel="noopener"' : '' %> aria-label="<%= b.titulo || b.textoEnlace || 'Ver más' %>"<%= i === 0 ? '' : ' aria-hidden=true tabindex=-1' %>
+       data-titulo="<%= b.titulo || '' %>" data-enlace="<%= b.enlace %>" data-externo="<%= b.externo ? '1' : '' %>" data-texto-enlace="<%= b.textoEnlace || '' %>"></a>
+    <% } else { %>
+    <div <%- atributos %><%- fondo %> data-titulo="<%= b.titulo || '' %>" data-enlace="" data-externo="" data-texto-enlace=""<%= i === 0 ? '' : ' aria-hidden=true' %>></div>
     <% } %>
-    <div class="leyenda">
+    <% }) %>
+    <% if (lista.length > 1) { %>
+    <div class="barras" aria-hidden="true"><% lista.forEach((b, i) => { %><i<%- i === 0 ? ' class="on"' : '' %>></i><% }) %></div>
+    <% } %>
+    <div class="leyenda"<%= conLeyenda ? '' : ' hidden' %>>
         <span>
-            <% if (banners.length > 1) { %><span class="num" id="heroNum">01 / <%= dos(banners.length) %></span><% } %>
-            <span id="heroTitulo"><%= banners[0].titulo %></span>
-            <a class="ir" id="heroEnlace" href="<%= banners[0].enlace %>"><%= banners[0].textoEnlace %></a>
+            <% if (lista.length > 1) { %><span class="num" id="heroNum">01 / <%= dos(lista.length) %></span><% } %>
+            <span id="heroTitulo"<%= primero.titulo ? '' : ' hidden' %>><%= primero.titulo %></span>
+            <a class="ir" id="heroEnlace" href="<%= primero.enlace || '#' %>"<%- primero.externo ? ' target="_blank" rel="noopener"' : '' %><%= primero.enlace && primero.textoEnlace ? '' : ' hidden' %>><%= primero.textoEnlace %></a>
         </span>
-        <% if (banners.length > 1) { %>
+        <% if (lista.length > 1) { %>
         <span class="flechas">
             <button type="button" id="heroPrev" aria-label="Banner anterior"><%- include('../partials/icono', { nombre: 'flecha-izq' }) %></button>
             <button type="button" id="heroNext" aria-label="Banner siguiente"><%- include('../partials/icono', { nombre: 'flecha' }) %></button>

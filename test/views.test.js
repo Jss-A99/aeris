@@ -182,3 +182,49 @@ describe('vistas reales', () => {
         assert.match(await html('/no-existe', 404), /No encontrada/);
     });
 });
+
+describe('inicio: banners de la hoja', () => {
+    const conBanners = {
+        ...repo,
+        async leerMeta() {
+            return { ...(await repo.leerMeta()), banners: [
+                { orden: 1, imagen: '/images/productos/banner-solo', titulo: '', enlace: null, externo: false, textoEnlace: '' },
+                { orden: 2, imagen: '/images/productos/banner-noir', titulo: 'Sastre Noir', enlace: '/conjunto/4-set-noir', externo: false, textoEnlace: 'Ver conjunto' },
+                { orden: 3, imagen: '/images/productos/banner-ig', titulo: '', enlace: 'https://instagram.com/aeris', externo: true, textoEnlace: '' }
+            ] };
+        }
+    };
+    const servir = async (repositorio, fn) => {
+        const consola = console.warn; console.warn = () => {};
+        const app = crearApp({ repositorio, ttlCatalogoMs: 60000 });
+        const servidor = await new Promise(r => { const s = app.listen(0, () => r(s)); });
+        try { return await fn(`http://127.0.0.1:${servidor.address().port}`); } finally { console.warn = consola; await new Promise(r => servidor.close(r)); }
+    };
+
+    test('sin banners: fondo liso, sin leyenda ni flechas', async () => {
+        await servir(repo, async (base) => {
+            const h = await (await fetch(base + '/')).text();
+            assert.equal((h.match(/class="slide/g) || []).length, 1);
+            assert.match(h, /<div class="leyenda" hidden>/);
+            assert.doesNotMatch(h, /id="heroPrev"/);
+            assert.doesNotMatch(h, /Colección Primavera 2026/);   // ya no hay banners de muestra
+        });
+    });
+
+    test('solo imagen, con enlace interno y título, y con enlace externo sin texto', async () => {
+        await servir(conBanners, async (base) => {
+            const h = await (await fetch(base + '/')).text();
+            // 1: solo imagen → no es enlace
+            assert.match(h, /<div class="slide on" style="background-image: url\('\/images\/productos\/banner-solo'\)"/);
+            // 2: toda la imagen lleva al conjunto
+            assert.match(h, /<a class="slide" style="background-image: url\('\/images\/productos\/banner-noir'\)" href="\/conjunto\/4-set-noir" aria-label="Sastre Noir" aria-hidden=true tabindex=-1/);
+            // 3: externo → otra pestaña
+            assert.match(h, /href="https:\/\/instagram\.com\/aeris" target="_blank" rel="noopener"/);
+            // La leyenda arranca con el primero: sin título ni texto (ocultos), pero con contador y flechas
+            assert.match(h, /<span id="heroTitulo" hidden><\/span>/);
+            assert.match(h, /<a class="ir" id="heroEnlace" href="#" hidden><\/a>/);
+            assert.match(h, /01 \/ 03/);
+            assert.match(h, /id="heroNext"/);
+        });
+    });
+});

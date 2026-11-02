@@ -465,3 +465,64 @@ describe('sincronizar — Mongo es un espejo de lo publicado', () => {
         assert.equal(r.advertencias.length, 1);
     });
 });
+
+/* ======================================================================== */
+
+describe('pestaña BANNERS (opcional)', () => {
+    const { normalizarEnlace, NOMBRE_FOTO } = require('../services/syncService');
+    const { NOMBRE_VALIDO } = require('../services/fotoService');
+    const fila = (n, datos) => ({ _fila: n, Orden: '', Foto: '', 'Título': '', Enlace: '', 'Texto del enlace': '', Activo: true, ...datos });
+    const conBanners = (filas) => { const c = cuerpo(); c.banners = filas; return construirCatalogo(c, { dominios: ['aeris-pe.onrender.com'] }); };
+
+    test('sin la pestaña o vacía: no hay banners y no es un error', () => {
+        const r = construirCatalogo(cuerpo());
+        assert.deepEqual(r.meta.banners, []);
+        assert.deepEqual(r.errores, []);
+        assert.deepEqual(conBanners([]).meta.banners, []);
+    });
+
+    test('manda "Activo": un solo activo con orden 23 sale igual; empate de orden → el de más arriba', () => {
+        let r = conBanners([fila(2, { Orden: 1, Foto: 'a', Activo: false }), fila(3, { Orden: 23, Foto: 'b' })]);
+        assert.deepEqual(r.meta.banners.map(b => [b.orden, b.imagen]), [[1, '/images/productos/b']]);
+        r = conBanners([fila(2, { Orden: 5, Foto: 'x' }), fila(3, { Orden: 2, Foto: 'y' }), fila(4, { Orden: 5, Foto: 'z' }), fila(5, { Foto: 'sin-orden' })]);
+        assert.deepEqual(r.meta.banners.map(b => b.imagen.split('/').pop()), ['y', 'x', 'z', 'sin-orden']);
+    });
+
+    test('título, enlace y texto del enlace son opcionales e independientes', () => {
+        const r = conBanners([
+            fila(2, { Foto: 'solo-imagen' }),
+            fila(3, { Foto: 'con-todo', 'Título': 'Sastre Noir', Enlace: 'https://aeris-pe.onrender.com/conjunto/12-sastre-noir', 'Texto del enlace': 'Ver conjunto' }),
+            fila(4, { Foto: 'enlace-sin-texto', Enlace: '/catalogo?categoria=conjuntos' }),
+            fila(5, { Foto: 'texto-sin-enlace', 'Texto del enlace': 'Ver más' })
+        ]);
+        assert.deepEqual(r.errores, []);
+        assert.deepEqual(r.meta.banners.map(b => [b.titulo, b.enlace, b.textoEnlace]), [
+            ['', null, ''],
+            ['Sastre Noir', '/conjunto/12-sastre-noir', 'Ver conjunto'],   // sin el dominio
+            ['', '/catalogo?categoria=conjuntos', ''],
+            ['', null, '']                                                  // texto sin enlace: no se muestra
+        ]);
+        assert.ok(contiene(r.advertencias, 'BANNERS fila 5: tiene "Texto del enlace" pero no "Enlace"'));
+    });
+
+    test('enlaces: propios sin dominio, externos marcados, mal escritos → error con la fila', () => {
+        const D = ['aeris-pe.onrender.com'];
+        assert.deepEqual(normalizarEnlace('https://www.aeris-pe.onrender.com/p/dia-de-la-madre', D), { enlace: '/p/dia-de-la-madre', externo: false });
+        assert.deepEqual(normalizarEnlace('aeris-pe.onrender.com/producto/3-blusa', D), { enlace: '/producto/3-blusa', externo: false });
+        assert.deepEqual(normalizarEnlace('https://instagram.com/aeris', D), { enlace: 'https://instagram.com/aeris', externo: true });
+        assert.equal(normalizarEnlace('  ', D), null);
+        const r = conBanners([fila(7, { Foto: 'a', Enlace: 'javascript:alert(1)' }), fila(8, { Foto: 'b', Enlace: 'conjunto 12' })]);
+        assert.equal(r.errores.length, 2);
+        assert.ok(contiene(r.errores, 'BANNERS fila 7: el enlace'));
+        assert.ok(contiene(r.errores, 'BANNERS fila 8: el enlace'));
+    });
+
+    test('foto: obligatoria en los activos y con las mismas reglas de nombre que el servidor de fotos', () => {
+        assert.equal(NOMBRE_FOTO.source, NOMBRE_VALIDO.source);
+        const r = conBanners([fila(2, { Foto: '', 'Título': 'Sin foto' }), fila(3, { Foto: 'Banner Primavera' }), fila(4, { Foto: 'x', Orden: 'primero' }), fila(5, { Foto: '', Activo: false })]);
+        assert.equal(r.errores.length, 3);
+        assert.ok(contiene(r.errores, 'BANNERS fila 2: falta la foto'));
+        assert.ok(contiene(r.errores, 'BANNERS fila 3: la foto "Banner Primavera" debe ir en minúsculas'));
+        assert.ok(contiene(r.errores, 'BANNERS fila 4: "Orden" debe ser un número'));
+    });
+});

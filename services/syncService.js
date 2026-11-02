@@ -23,6 +23,34 @@
  */
 
 const { normalizarCodigo } = require('../utils/promo');
+const { rutaImagen } = require('../utils/productNormalizer');
+
+/** Nombre de foto: mismas reglas que services/fotoService.js (NOMBRE_VALIDO). Extensión opcional. */
+const NOMBRE_FOTO = /^(?=.{1,120}$)[a-z0-9](?:[a-z0-9_-]|\.(?=[a-z0-9]))*$/;
+
+/**
+ * Enlace de un banner → dirección para la web, o lanza un texto de error.
+ *   vacío                                   → null (banner sin enlace)
+ *   /conjunto/12-sastre                     → igual
+ *   https://<dominio propio>/conjunto/12…   → /conjunto/12…   (sin el dominio)
+ *   https://instagram.com/aeris             → igual, externo (se abre en otra pestaña)
+ */
+function normalizarEnlace(valor, dominios) {
+    const t = String(valor === null || valor === undefined ? '' : valor).trim();
+    if (!t) return null;
+    if (t.startsWith('/') && !t.startsWith('//')) {
+        if (/\s/.test(t)) throw 'no puede tener espacios';
+        return { enlace: t, externo: false };
+    }
+    const conProtocolo = /^[a-z0-9.-]+\.[a-z]{2,}(\/|$)/i.test(t) ? 'https://' + t : t;
+    let url;
+    try { url = new URL(conProtocolo); } catch (e) { throw 'debe ser una dirección completa (https://…) o empezar con /'; }
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') throw 'debe empezar con https://';
+    const host = url.host.toLowerCase().replace(/^www\./, '');
+    const propios = (dominios || []).map(d => String(d || '').toLowerCase().replace(/^www\./, '')).filter(Boolean);
+    if (propios.includes(host)) return { enlace: (url.pathname || '/') + url.search + url.hash, externo: false };
+    return { enlace: url.href, externo: true };
+}
 
 const MAX_MENSAJES = 30;
 
@@ -149,7 +177,7 @@ function fechaLima(v) {
  *   resumen: { publicados: number, noPublicados: number }
  * }}
  */
-function construirCatalogo(cuerpo) {
+function construirCatalogo(cuerpo, opciones = {}) {
     const errores = [];
     const advertencias = [];
     const error = (m) => errores.push(m);
@@ -473,9 +501,50 @@ function construirCatalogo(cuerpo) {
         });
     }
 
+    /* ---------- BANNERS (opcional) ----------
+       Solo cuentan los que tienen "Activo" marcado; "Orden" los ordena entre sí (sin orden, al final;
+       empate, el de más arriba). Título, Enlace y Texto del enlace son opcionales e independientes. */
+    const banners = [];
+    {
+        const filas = filasDe(cuerpo.banners);
+        if (filas.some(f => !esFilaVacia(f))) exigirColumnas('BANNERS', filas, ['Foto', 'Activo']);
+        filas.forEach((f, i) => {
+            if (esFilaVacia(f)) return;
+            const leer = lector(f);
+            if (!booleano(leer('Activo'))) return;
+            const donde = `BANNERS fila ${numeroDeFila(f, i)}`;
+
+            const foto = texto(leer('Foto'));
+            if (!foto) { error(`${donde}: falta la foto (nombre del archivo en la carpeta BANNERS).`); return; }
+            if (!NOMBRE_FOTO.test(foto)) { error(`${donde}: la foto "${foto}" debe ir en minúsculas, sin espacios ni tildes (ej. banner-primavera).`); return; }
+
+            const ordenRaw = leer('Orden');
+            const orden = vacio(ordenRaw) ? Infinity : numero(ordenRaw);
+            if (!Number.isFinite(orden) && orden !== Infinity) { error(`${donde}: "Orden" debe ser un número (hay "${texto(ordenRaw)}").`); return; }
+
+            let destino = null;
+            try { destino = normalizarEnlace(leer('Enlace'), opciones.dominios); } catch (motivo) {
+                error(`${donde}: el enlace "${texto(leer('Enlace'))}" ${motivo}.`); return;
+            }
+            const textoEnlace = texto(leer('Texto del enlace', 'Texto enlace'));
+            if (textoEnlace && !destino) advertir(`${donde}: tiene "Texto del enlace" pero no "Enlace"; el texto no se mostrará.`);
+
+            banners.push({
+                fila: i, orden,
+                imagen: rutaImagen(foto),
+                titulo: texto(leer('Título', 'Titulo')),
+                enlace: destino ? destino.enlace : null,
+                externo: destino ? destino.externo : false,
+                textoEnlace: destino ? textoEnlace : ''
+            });
+        });
+        banners.sort((a, b) => (a.orden - b.orden) || (a.fila - b.fila) || 0);
+        banners.forEach((b, i) => { b.orden = i + 1; delete b.fila; });
+    }
+
     return {
         documentos,
-        meta: { categorias, familiasColor, tallas, promociones },
+        meta: { categorias, familiasColor, tallas, promociones, banners },
         errores,
         advertencias,
         resumen: { publicados: publicados.length, noPublicados: productos.size - publicados.length }
@@ -493,12 +562,12 @@ function recortar(mensajes) {
  * @param {{ repositorio: Object }} opciones
  * @returns {Promise<{ publicados:number, noPublicados:number, eliminados:number, advertencias:string[] }>}
  */
-async function sincronizar(cuerpo, { repositorio }) {
+async function sincronizar(cuerpo, { repositorio, dominios }) {
     if (!cuerpo || !Array.isArray(cuerpo.productos) || cuerpo.productos.length === 0) {
         throw new ErrorSync(400, 'El catálogo enviado está vacío.');
     }
 
-    const { documentos, meta, errores, advertencias, resumen } = construirCatalogo(cuerpo);
+    const { documentos, meta, errores, advertencias, resumen } = construirCatalogo(cuerpo, { dominios });
 
     if (errores.length > 0) {
         throw new ErrorSync(
@@ -520,4 +589,4 @@ async function sincronizar(cuerpo, { repositorio }) {
     };
 }
 
-module.exports = { ErrorSync, parsearProductosIncluidos, construirCatalogo, sincronizar };
+module.exports = { ErrorSync, parsearProductosIncluidos, construirCatalogo, sincronizar, normalizarEnlace, NOMBRE_FOTO };

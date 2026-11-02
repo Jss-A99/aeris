@@ -91,7 +91,7 @@ function crearApp(opciones = {}) {
     }));
 
     const pages = crearPagesController({ catalogo });
-    const syncController = crearSyncController({ repositorio, catalogo, fotos, dirFotos: path.join(__dirname, 'public', 'images', 'productos') });
+    const syncController = crearSyncController({ repositorio, catalogo, fotos, dirFotos: path.join(__dirname, 'public', 'images', 'productos'), dominios: app.locals.tienda.dominios });
     const bolsa = crearBolsaController({ catalogo });
     const pedidosController = crearPedidosController({
         pedidos: crearPedidoService({ repositorio: pedidoRepositorio, catalogo, envio: app.locals.tienda.envio })

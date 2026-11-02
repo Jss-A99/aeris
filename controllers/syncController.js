@@ -23,6 +23,7 @@ async function fotosFaltantes({ catalogo, fotos, dirFotos }) {
         const m = /^\/images\/productos\/([^/?#]+)$/.exec(ruta || '');
         if (m) mencionadas.add(decodeURIComponent(m[1]));
     };
+    if (catalogo.banners) (await catalogo.banners()).forEach(b => anotar(b.imagen));
     (await catalogo.todos()).forEach(p => {
         p.galeria.forEach(anotar);
         p.colores.forEach(c => anotar(c.imagen));
@@ -40,13 +41,14 @@ async function fotosFaltantes({ catalogo, fotos, dirFotos }) {
  * @param {{ invalidar: () => void, todos: Function }} deps.catalogo   Para refrescar la caché tras sincronizar.
  * @param {Object} [deps.fotos]     fotoService: para avisar de fotos que faltan
  * @param {string} [deps.dirFotos]  carpeta local de fotos (public/images/productos)
+ * @param {string[]} [deps.dominios] direcciones de la tienda (config/tienda.js): enlaces de banners sin dominio
  */
-function crearSyncController({ repositorio, catalogo, fotos, dirFotos }) {
+function crearSyncController({ repositorio, catalogo, fotos, dirFotos, dominios = [] }) {
     return {
         async sincronizarCatalogo(req, res) {
             const cuerpo = req.body || {};
             try {
-                const resultado = await sincronizar(cuerpo, { repositorio });
+                const resultado = await sincronizar(cuerpo, { repositorio, dominios: [...dominios, typeof req.get === 'function' ? req.get('host') : null] });
                 catalogo.invalidar();
                 try {
                     resultado.advertencias = [...resultado.advertencias, ...await fotosFaltantes({ catalogo, fotos, dirFotos })];

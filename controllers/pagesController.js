@@ -7,7 +7,8 @@
  *   3. renderiza una vista con un conjunto FIJO de variables ("view model").
  *
  * VIEW MODELS (lo que recibe cada vista; cualquier otra cosa no existe)
- *   pages/index     { pagina, title, pestanas: [{id,nombre,total,items: ProductDTO[]}], looks: ProductDTO[] }
+ *   pages/index     { pagina, title, banners: Banner[], pestanas: [{id,nombre,total,items: ProductDTO[]}], looks: ProductDTO[] }
+ *                   Banner: { imagen, titulo, enlace|null, externo, textoEnlace }  (pestaña BANNERS)
  *   pages/catalogo  { pagina, title, categoriaSeleccionada, filtros, ...armarPaginaCatalogo() }
  *                   (consulta, pestanas, resultado {items,total,pagina,paginas,desde}, paginacion,
  *                    chips, nActivos, hrefLimpiar, ordenes, datosConteo)
@@ -48,6 +49,7 @@ function crearPagesController({ catalogo }) {
             res.render('pages/index', {
                 pagina: 'home',
                 title: 'AERIS — Ropa de mujer en Lima',
+                banners: await catalogo.banners(),
                 pestanas: elegirPestanas(prendas, categorias),
                 looks: elegirLooks(conjuntos)
             });

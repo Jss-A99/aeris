@@ -21,11 +21,17 @@
                 if (k === actual) s.removeAttribute('aria-hidden'); else s.setAttribute('aria-hidden', 'true');
             });
             barras.forEach((b, k) => b.classList.toggle('on', k === actual));
-            const s = slides[actual];
+            slides.forEach((s, k) => { if (s.tagName === 'A') s.tabIndex = k === actual ? 0 : -1; });
+            const s = slides[actual], d = s.dataset;
             $('heroNum').textContent = `${dos(actual + 1)} / ${dos(slides.length)}`;
-            $('heroTitulo').textContent = s.dataset.titulo;
-            $('heroEnlace').textContent = s.dataset.textoEnlace;
-            $('heroEnlace').href = s.dataset.enlace;
+            // Título y texto del enlace son opcionales: si no hay, no se muestra nada
+            $('heroTitulo').textContent = d.titulo;
+            $('heroTitulo').hidden = !d.titulo;
+            const enlace = $('heroEnlace');
+            enlace.textContent = d.textoEnlace;
+            enlace.hidden = !(d.enlace && d.textoEnlace);
+            enlace.href = d.enlace || '#';
+            if (d.externo) { enlace.target = '_blank'; enlace.rel = 'noopener'; } else { enlace.removeAttribute('target'); enlace.removeAttribute('rel'); }
             reiniciar();
         };
         const reiniciar = () => {
@@ -36,14 +42,16 @@
         $('heroNext').addEventListener('click', () => ir(actual + 1));
         document.addEventListener('visibilitychange', reiniciar);
 
-        let x0 = null;
+        let x0 = null, deslizo = false;
         const hero = $('hero');
-        hero.addEventListener('pointerdown', e => { x0 = e.clientX; });
+        hero.addEventListener('pointerdown', e => { x0 = e.clientX; deslizo = false; });
         hero.addEventListener('pointerup', e => {
             if (x0 === null) return;
             const dx = e.clientX - x0; x0 = null;
-            if (Math.abs(dx) > 40) ir(actual + (dx < 0 ? 1 : -1));
+            if (Math.abs(dx) > 40) { deslizo = true; ir(actual + (dx < 0 ? 1 : -1)); }
         });
+        // Deslizar para cambiar de banner no debe abrir el enlace del banner
+        hero.addEventListener('click', e => { if (deslizo && e.target.closest('a.slide')) { e.preventDefault(); deslizo = false; } }, true);
         reiniciar();
     }
 

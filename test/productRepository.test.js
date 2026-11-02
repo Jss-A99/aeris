@@ -60,17 +60,17 @@ describe('productRepository — operaciones contra Mongo', () => {
         const { Producto, Meta, registro } = modelosFalsos();
         await crearProductRepository({ Producto, Meta }).guardarMeta(meta);
         assert.deepEqual(registro.replaceOne.filtro, { _id: 'tablas' });
-        assert.deepEqual(registro.replaceOne.doc, { categorias: meta.categorias, familiasColor: meta.familiasColor, tallas: meta.tallas, promociones: meta.promociones });
+        assert.deepEqual(registro.replaceOne.doc, { categorias: meta.categorias, familiasColor: meta.familiasColor, tallas: meta.tallas, promociones: meta.promociones, banners: [] });
         assert.deepEqual(registro.replaceOne.opciones, { upsert: true });
     });
 
     test('leerMeta: devuelve las tablas guardadas, o tablas vacías si aún no hubo ningún sync', async () => {
         const guardada = modelosFalsos({ metaGuardada: { _id: 'tablas', ...meta, __v: 0 } });
-        assert.deepEqual(await crearProductRepository(guardada).leerMeta(), meta);
+        assert.deepEqual(await crearProductRepository(guardada).leerMeta(), { ...meta, banners: [] });
         assert.equal(guardada.registro.findById, 'tablas');
 
         const vacia = modelosFalsos({ metaGuardada: null });
-        assert.deepEqual(await crearProductRepository(vacia).leerMeta(), { categorias: [], familiasColor: [], tallas: [], promociones: [] });
+        assert.deepEqual(await crearProductRepository(vacia).leerMeta(), { categorias: [], familiasColor: [], tallas: [], promociones: [], banners: [] });
     });
 });
 
