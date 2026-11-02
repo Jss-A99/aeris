@@ -238,7 +238,7 @@ describe('wish-store', () => {
 
 /* ======================================================================== */
 
-const { crearPedidosStore, volverAPedir, MAXIMO } = require('../public/js/core/pedidos-store');
+const { crearPedidosStore, MAXIMO } = require('../public/js/core/pedidos-store');
 const P = require('../public/js/core/pedido');
 
 describe('pedidos-store ("Pedidos", guardado en el navegador)', () => {
@@ -294,32 +294,5 @@ describe('pedidos-store ("Pedidos", guardado en el navegador)', () => {
         assert.throws(() => ps.agregar({ id: 'x' }), C.CartItemError);
         const s = storageFalso({ 'aeris:pedidos': JSON.stringify({ v: 1, items: [{ id: 'roto' }, pedido('AER-0009')] }) });
         assert.deepEqual(nuevosPedidos(s).getItems().map(p => p.id), ['AER-0009']);
-    });
-
-    test('"Volver a pedir" usa el stock de hoy: ajusta, cuenta lo que ya está en la bolsa y omite lo que no existe', () => {
-        const lineas = [
-            { id: blusa().id, tipo: 'prenda', titulo: 'Blusa de seda', precio: 100, cantidad: 2, color: 'Negro', talla: 'M', componentes: [] },
-            { id: 'ya-no-existe', tipo: 'prenda', titulo: 'Falda', precio: 90, cantidad: 1, color: 'Rojo', talla: 'S', componentes: [] }
-        ];
-        const productos = { [blusa().id]: blusa(), 'ya-no-existe': null };
-
-        // Hay 3 negras M: se piden las 2, con el precio ACTUAL (120)
-        let r = volverAPedir(lineas, productos, () => 0);
-        assert.equal(r.items.length, 1);
-        assert.equal(r.items[0].cantidad, 2);
-        assert.equal(r.items[0].precio, 120);
-        assert.equal(r.incompletos, 1);              // la falda
-
-        // Ya hay 2 en la bolsa: solo cabe 1 más
-        r = volverAPedir(lineas.slice(0, 1), productos, () => 2);
-        assert.equal(r.items[0].cantidad, 1);
-        assert.equal(r.incompletos, 1);
-
-        // Ya están las 3: no se agrega nada
-        r = volverAPedir(lineas.slice(0, 1), productos, () => 3);
-        assert.deepEqual(r.items, []);
-
-        // Todo disponible
-        assert.equal(volverAPedir(lineas.slice(0, 1), productos, () => 0).incompletos, 0);
     });
 });

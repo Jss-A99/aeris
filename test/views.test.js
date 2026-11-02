@@ -126,6 +126,7 @@ describe('vistas reales', () => {
         assert.match(h, /<script src="\/js\/ui\/pedidos.js"><\/script>/);
         assert.match(h, /"whatsapp":"51966796407"/);
         assert.doesNotMatch(h, /Mis pedidos|Esperando pago|Pagado/);   // sin estados de pago
+        assert.doesNotMatch(h, /Volver a pedir|Volver a abrir WhatsApp|se guardan en este navegador/);   // quitados a pedido de la tienda
         // Bolsa y Favoritos también llevan la pestaña Pedidos
         assert.match(await html('/carrito'), /<a href="\/pedidos">Pedidos<sup data-cuenta="pedidos">0<\/sup><\/a>/);
         assert.match(await html('/favoritos'), /<a href="\/pedidos">Pedidos<sup data-cuenta="pedidos">0<\/sup><\/a>/);
