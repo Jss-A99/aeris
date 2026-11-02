@@ -171,7 +171,10 @@ main { display: block; }
 
 /* 7. Tarjetas -------------------------------------------------------------- */
 .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 40px 22px; }
-.card { display: grid; gap: 10px; align-content: start; min-width: 0; }
+.card { display: grid; gap: 12px; align-content: start; min-width: 0; }
+/* Debajo de la foto: nombre, (piezas), precio, (Nuevo/Agotado) con la MISMA separación entre líneas */
+.card-texto { display: grid; gap: 6px; align-content: start; justify-items: start; min-width: 0; }
+.card-texto > .fila { justify-self: stretch; }
 .foto { position: relative; aspect-ratio: 3 / 4; background: var(--a-foto); overflow: hidden; }
 .foto > a { display: block; height: 100%; }
 .foto img { width: 100%; height: 100%; object-fit: cover; transition: opacity var(--r-rapido) ease; }
@@ -181,11 +184,11 @@ main { display: block; }
 .guardar[aria-pressed="true"] .i { fill: var(--a-acento); stroke: var(--a-acento); }
 .fila { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: start; }
 .nombre { font-size: var(--t-xs); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; line-height: 1.3; text-decoration: none; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.mas { width: 36px; height: 36px; margin: -9px -9px 0 0; display: grid; place-items: center; background: none; border: 0; color: var(--a-tinta); cursor: pointer; padding: 0; }
+.mas { width: 36px; height: 36px; margin: -9px -9px -9px 0; display: grid; place-items: center; background: none; border: 0; color: var(--a-tinta); cursor: pointer; padding: 0; }
 .mas .i { width: 16px; height: 16px; }
 .precio { font-size: var(--t-s); font-weight: 700; font-variant-numeric: tabular-nums; display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: baseline; }
 .precio s { font-weight: 500; font-size: var(--t-xs); color: var(--a-texto2); }
-.nota { font-size: var(--t-xs); font-weight: 700; letter-spacing: .12em; text-transform: uppercase; margin-top: -4px; color: var(--a-texto2); }
+.nota { font-size: var(--t-xs); font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--a-texto2); }
 .nota.nuevo { color: var(--a-acento); }
 
 /* 8. Selector rápido de color y talla -------------------------------------- */
@@ -423,6 +426,8 @@ main { display: block; }
 .sec.favoritos { padding-top: 32px; gap: 40px; }
 .card.fav { transition: opacity var(--r-medio) ease, transform var(--r-medio) ease; }
 .card.fav.saliendo { opacity: 0; transform: translateY(6px); }
+button.enlace { background: none; border: 0; border-bottom: 1.5px solid currentColor; border-radius: 0; cursor: pointer; font-family: inherit; }
+.fav-accion { margin-top: 4px; }
 .favoritos .vacio { padding-top: 24px; }
 
 /* 11c. Ficha de producto y de conjunto ------------------------------------- */
@@ -545,7 +550,7 @@ main { display: block; }
     :root { --pad: 16px; --alto-nav: 56px; --aire-titulo: 12px; }
     .bolsa { padding-bottom: 64px; }
     /* Áreas táctiles de al menos 44 px (lo que se toca con el pulgar) */
-    .mas { width: 44px; height: 44px; margin: -12px -12px 0 0; }
+    .mas { width: 44px; height: 44px; margin: -13px -12px -13px 0; }
     .guardar { width: 44px; height: 44px; }
     .hoja .sw, .vidrio .sw, .ficha .sw { width: 40px; height: 40px; }
     .hoja .talla, .vidrio .talla { min-width: 48px; height: 44px; }
@@ -558,6 +563,7 @@ main { display: block; }
     .mapa, .mapa iframe { min-height: 0; aspect-ratio: 4 / 3; height: auto; }
     .pestanas-cuenta { padding-top: 14px; }
     .sec.favoritos { padding-top: 24px; }
+    .fav-accion { padding: 12px 0 8px; margin-top: 0; }   /* área táctil cómoda */
     .ficha-wrap { grid-template-columns: 1fr; gap: 20px; padding: var(--alto-nav) 0 56px; }
     .miniaturas { display: flex; overflow-x: auto; scrollbar-width: none; padding: 0 var(--pad); gap: 6px; }
     .miniaturas::-webkit-scrollbar { display: none; }

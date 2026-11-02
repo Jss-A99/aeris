@@ -49,51 +49,68 @@
         };
     }
 
-    /** "Color: Negro · Talla: M" (sin las partes que no aplican). */
+    /** "Negro · Talla M" (sin las partes que no aplican). */
     function opciones(color, talla) {
-        return [color ? `Color: ${color}` : '', talla ? `Talla: ${talla}` : ''].filter(Boolean).join(' · ');
+        return [color || '', talla ? `Talla ${talla}` : ''].filter(Boolean).join(' · ');
+    }
+
+    const SEPARADOR = '────────────';
+
+    /** Texto de la entrega para el mensaje. */
+    function textoEntrega(entrega, gratis) {
+        if (entrega === 'recojo') return 'Recojo en tienda';
+        if (entrega === 'lima') return gratis ? 'Envío en Lima, gratis' : 'Envío en Lima, costo por coordinar';
+        return 'Envío a provincia, costo por coordinar';
     }
 
     /**
+     * Mensaje del pedido para WhatsApp (en WhatsApp, *texto* se ve en negrita).
+     *
+     *   Hola, AERIS. Me gustaría hacer este pedido:
+     *
+     *   *PEDIDO AER-0042*
+     *   ────────────
+     *
+     *   *Blusa Seda Básica*
+     *   Negro · Talla M
+     *   Cantidad: 2 · S/ 159.80
+     *   …
+     *   ────────────
+     *   Subtotal: S/ 449.70
+     *   Descuento (AERIS10): −S/ 44.97
+     *   Entrega: Envío en Lima, costo por coordinar
+     *   *Total: S/ 404.73 + envío*
+     *
      * @param {Object} p
      * @param {Object[]} p.lineas
      * @param {'recojo'|'lima'|'provincia'} p.entrega
      * @param {{ codigo:string, descuento:number }|null} [p.promo]
      * @param {boolean} [p.envioGratis]  la compra alcanzó el envío gratis en Lima
+     * @param {string} [p.codigo]        código del pedido (AER-0042); sin código, solo "PEDIDO"
      */
-    function armarMensaje({ lineas, entrega, promo, envioGratis: gratis }) {
+    function armarMensaje({ lineas, entrega, promo, envioGratis: gratis, codigo }) {
         const t = totales(lineas, promo ? promo.descuento : 0);
-        const filas = ['Hola AERIS, quiero hacer este pedido:', ''];
+        const filas = ['Hola, AERIS. Me gustaría hacer este pedido:', '', `*PEDIDO${codigo ? ' ' + codigo : ''}*`, SEPARADOR];
 
-        lineas.forEach((l, i) => {
-            filas.push(`${i + 1}. ${l.titulo}`);
+        lineas.forEach(l => {
+            filas.push('', `*${l.titulo}*`);
             if (l.componentes && l.componentes.length) {
                 l.componentes.forEach(c => {
-                    const o = [c.color, c.talla].filter(Boolean).join(' · ');
-                    filas.push(`   ${c.nombre}${o ? ': ' + o : ''}`);
+                    const o = opciones(c.color, c.talla);
+                    filas.push(o ? `${c.nombre} — ${o}` : c.nombre);
                 });
             } else {
                 const o = opciones(l.color, l.talla);
-                if (o) filas.push(`   ${o}`);
+                if (o) filas.push(o);
             }
-            filas.push(`   ${l.cantidad} × ${soles(l.precio)} = ${soles(l.precio * l.cantidad)}`);
+            filas.push(`Cantidad: ${l.cantidad} · ${soles(l.precio * l.cantidad)}`);
         });
 
-        filas.push('', `Subtotal: ${soles(t.subtotal)}`);
-        if (promo && t.descuento > 0) filas.push(`Código ${promo.codigo}: -${soles(t.descuento)}`);
-        if (entrega === 'lima' && gratis) {
-            filas.push('Entrega: Envío en Lima (gratis)');
-            filas.push(`Total: ${soles(t.total)}`);
-        } else if (entrega === 'lima') {
-            filas.push('Entrega: Envío en Lima (el costo lo coordinamos según mi distrito)');
-            filas.push(`Total: ${soles(t.total)} + envío`);
-        } else if (entrega === 'provincia') {
-            filas.push('Entrega: Envío a provincia (el costo lo coordinamos)');
-            filas.push(`Total: ${soles(t.total)} + envío`);
-        } else {
-            filas.push('Entrega: Recojo en tienda');
-            filas.push(`Total: ${soles(t.total)}`);
-        }
+        filas.push('', SEPARADOR, `Subtotal: ${soles(t.subtotal)}`);
+        if (promo && t.descuento > 0) filas.push(`Descuento (${promo.codigo}): −${soles(t.descuento)}`);
+        filas.push(`Entrega: ${textoEntrega(entrega, gratis)}`);
+        const conEnvioAparte = entrega === 'provincia' || (entrega === 'lima' && !gratis);
+        filas.push(`*Total: ${soles(t.total)}${conEnvioAparte ? ' + envío' : ''}*`);
         return filas.join('\n');
     }
 

@@ -86,6 +86,8 @@ describe('vistas reales', () => {
         assert.match(h, /4 artículos/);
         assert.ok(h.lastIndexOf('Blusa agotada') > h.lastIndexOf('Set Noir'), 'el agotado va al final');
         assert.match(h, /aria-label="Ver conjunto Set Noir"/);
+        // Tarjeta de conjunto: nombre → piezas → precio
+        assert.match(h, /Set Noir<\/a>[\s\S]{0,400}?<span class="nota">Conjunto · 2 piezas<\/span>\s*<span class="precio">S\/ 200\.00/);
         assert.match(h, /<s>S\/ 129.90<\/s>/);
         assert.match(h, /Eliminar filtros \(0\)/);
     });
@@ -136,7 +138,9 @@ describe('vistas reales', () => {
         assert.deepEqual(sueltos, [], 'los tamaños de letra salen de la escala (--t-*), nada por debajo de 12 px');
         const tiempos = new Set((css.match(/(?<![\d.])\.\d+s\b/g) || []));
         assert.deepEqual([...tiempos].sort(), ['.25s', '.45s', '.75s'], 'solo las tres velocidades (--r-*)');
-        assert.doesNotMatch(css, /\.ver-mas|\.fav-accion/);
+        assert.doesNotMatch(css, /\.ver-mas/);
+        assert.match(css, /button\.enlace \{[^}]*border: 0; border-bottom: 1\.5px solid currentColor;/);   // acciones de texto: subrayadas, sin recuadro
+        assert.match(css, /\.card-texto \{ display: grid; gap: 6px;/);                                     // misma separación entre líneas
         assert.doesNotMatch(css, /\.btn-sec:hover \{ background: var\(--a-tinta\)/);           // sin negro relleno
         // Menú del celular: con el menú abierto, el navbar no lleva desenfoque (si no, el menú se recorta)
         assert.match(css, /\.nav\.abierto \{[^}]*backdrop-filter: none;/);

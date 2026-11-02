@@ -8,7 +8,9 @@
  *    marcado y fuera del pedido.
  *  - Código promocional (lo valida el servidor), entrega (recojo / Lima / provincia) y totales.
  *  - Envío gratis en Lima: aviso con barra solo cuando falta poco (config/tienda.js → envio).
- *  - "Finalizar orden" abre WhatsApp con el pedido escrito (core/pedido.js).
+ *  - "Finalizar orden": registra el pedido en la tienda (código AER-0042, sin tocar el stock)
+ *    y abre WhatsApp con el pedido escrito (core/pedido.js). Si la tienda no responde, igual
+ *    abre WhatsApp con el pedido, sin código, para no perder la venta.
  */
 (function () {
     'use strict';
@@ -98,6 +100,7 @@
     }
 
     let lineasPedido = [];
+    let itemsPedido = [];          // los CartItem disponibles, para registrar el pedido
     let envioEsGratis = false;
 
     function pintar() {
@@ -125,6 +128,7 @@
             + items.map((it, i) => lineaHTML(it, evaluaciones[i])).join('');
         UI.refrescar(lineas);
 
+        itemsPedido = items.filter((it, i) => evaluaciones[i].ok);
         lineasPedido = items
             .map((it, i) => ({ it, ev: evaluaciones[i] }))
             .filter(x => x.ev.ok)
@@ -244,20 +248,74 @@
     });
 
     /* ---------- Finalizar orden ---------- */
-    $('finalizar').addEventListener('click', () => {
+    function avisoFinal(texto) {
+        const el = $('avisoEntrega');
+        el.textContent = texto;
+        el.hidden = false;
+    }
+
+    $('finalizar').addEventListener('click', async () => {
         if (!lineasPedido.length) return;
         if (!entrega) {
-            $('avisoEntrega').hidden = false;
+            avisoFinal('Elige cómo quieres recibir tu pedido.');
             document.querySelector('input[name="entrega"]').focus();
             return;
         }
-        const texto = P.armarMensaje({ lineas: lineasPedido, entrega, promo, envioGratis: envioEsGratis });
-        const enlace = P.enlaceWhatsApp(datos.whatsapp, texto);
-        if (!enlace) {
+        if (!P.enlaceWhatsApp(datos.whatsapp, '-')) {
             UI.avisar('Falta el número de WhatsApp de la tienda', false);
             return;
         }
-        window.open(enlace, '_blank', 'noopener');
+        $('avisoEntrega').hidden = true;
+
+        // La pestaña de WhatsApp se abre YA (si se abre después de esperar al servidor, el
+        // navegador la bloquea como ventana emergente) y luego se le pone la dirección.
+        const ventana = window.open('', '_blank');
+        const boton = $('finalizar');
+        const textoBoton = boton.innerHTML;
+        boton.disabled = true;
+        boton.lastChild.textContent = 'Preparando tu pedido…';
+
+        let texto;
+        try {
+            const res = await fetch('/api/pedidos', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json', Accept: 'application/json' },
+                body: JSON.stringify({
+                    entrega,
+                    codigoPromo: promo ? promo.codigo : null,
+                    lineas: itemsPedido.map(it => ({
+                        id: it.id, cantidad: it.cantidad, color: it.color, talla: it.talla,
+                        componentes: it.componentes.map(c => ({ id: c.id, color: c.color, talla: c.talla }))
+                    }))
+                })
+            });
+            const r = await res.json();
+            if (!r.ok) {
+                if (ventana) ventana.close();
+                avisoFinal(r.mensaje || 'No pudimos registrar tu pedido. Inténtalo de nuevo.');
+                if (res.status === 409) {                       // cambió el stock: volver a revisar la bolsa
+                    Object.keys(productos).forEach(k => delete productos[k]);
+                    actualizar();
+                }
+                return;
+            }
+            // Precios y totales confirmados por la tienda
+            texto = P.armarMensaje({ codigo: r.codigo, lineas: r.lineas, entrega, promo: r.promo, envioGratis: r.envioGratis });
+        } catch (e) {
+            // La tienda no respondió: se envía igual, sin código, para no perder el pedido.
+            texto = P.armarMensaje({ lineas: lineasPedido, entrega, promo, envioGratis: envioEsGratis });
+        } finally {
+            boton.disabled = false;
+            boton.innerHTML = textoBoton;
+        }
+
+        const enlace = P.enlaceWhatsApp(datos.whatsapp, texto);
+        if (ventana) {
+            ventana.opener = null;
+            ventana.location.href = enlace;
+        } else {
+            window.location.href = enlace;
+        }
     });
 
     Bolsa.subscribe(() => { actualizar(); });

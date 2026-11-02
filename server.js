@@ -26,6 +26,8 @@ const { crearSyncController } = require('./controllers/syncController');
 const { crearBolsaController } = require('./controllers/bolsaController');
 const { crearFotosController } = require('./controllers/fotosController');
 const { crearFotoService } = require('./services/fotoService');
+const { crearPedidosController } = require('./controllers/pedidosController');
+const { crearPedidoService } = require('./services/pedidoService');
 const { crearSyncRoutes } = require('./routes/syncRoutes');
 const { crearRutas } = require('./routes/index');
 const { jsonParaHtml } = require('./utils/safeJson');
@@ -40,6 +42,7 @@ const { soles } = require('./utils/formato');
  * @param {number} [opciones.ttlCatalogoMs]
  * @param {Object} [opciones.fotoRepositorio] Por defecto, el de MongoDB (o uno vacío en memoria si se
  *                                            inyectó `repositorio`, es decir, en pruebas).
+ * @param {Object} [opciones.pedidoRepositorio] Igual que fotoRepositorio.
  */
 function crearApp(opciones = {}) {
     const repositorio = opciones.repositorio || require('./repositories/productRepository');
@@ -52,6 +55,9 @@ function crearApp(opciones = {}) {
         || (opciones.repositorio ? repoFotos.crearFotoRepositoryMemoria() : repoFotos);
     const fotos = crearFotoService({ repositorio: fotoRepositorio });
     const fotosController = crearFotosController({ fotos });
+    const repoPedidos = require('./repositories/pedidoRepository');
+    const pedidoRepositorio = opciones.pedidoRepositorio
+        || (opciones.repositorio ? repoPedidos.crearPedidoRepositoryMemoria() : repoPedidos);
 
     const app = express();
 
@@ -84,7 +90,10 @@ function crearApp(opciones = {}) {
     const pages = crearPagesController({ catalogo });
     const syncController = crearSyncController({ repositorio, catalogo, fotos, dirFotos: path.join(__dirname, 'public', 'images', 'productos') });
     const bolsa = crearBolsaController({ catalogo });
-    app.use('/', crearRutas({ pages, bolsa, syncRouter: crearSyncRoutes(syncController, fotosController) }));
+    const pedidosController = crearPedidosController({
+        pedidos: crearPedidoService({ repositorio: pedidoRepositorio, catalogo, envio: app.locals.tienda.envio })
+    });
+    app.use('/', crearRutas({ pages, bolsa, pedidos: pedidosController, syncRouter: crearSyncRoutes(syncController, fotosController, pedidosController) }));
 
     app.use(handle404);
     app.use(handleErrors);

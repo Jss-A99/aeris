@@ -5,15 +5,18 @@
  *  - Pinta los favoritos guardados en el navegador con sus datos ACTUALES del servidor
  *    (precio, tachado, "Nuevo", agotado). Lo que ya no está publicado queda marcado.
  *  - El marcador de cada tarjeta lo quita (con una salida suave).
- *  - Igual que en el catálogo: "+" abre el selector de color y talla (tienda.js); en un
- *    conjunto, la flecha lleva a su página.
+ *  - "Agregar a la bolsa" (texto subrayado) abre el selector de color y talla: el vidrio en
+ *    computadora, la hoja en celular (tienda.js). En un conjunto: "Ver conjunto".
  *  - "Te puede interesar": oculta lo que ya está en favoritos y deja ver hasta 4.
+ *  - Un favorito que ya está en la bolsa SE QUEDA en favoritos y muestra "En tu bolsa"
+ *    (o "En tu bolsa · 2" si hay varias unidades/combinaciones). Se actualiza solo.
  */
 (function () {
     'use strict';
 
     const $ = (id) => document.getElementById(id);
     const Wish = window.AerisWishStore;
+    const Bolsa = window.AerisBagStore;
     const UI = window.AerisUI;
     const grid = $('favoritos');
     if (!grid || !Wish || !UI) return;
@@ -23,8 +26,6 @@
     const SALIDA_MS = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 450;   // = --r-medio
     const MAX_SUGERENCIAS = 4;
     const ICONO_WISH = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg>';
-    const ICONO_MAS = '<svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v12M2 8h12"/></svg>';
-    const ICONO_FLECHA = '<svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h12M9 3l5 5-5 5"/></svg>';
 
     const actuales = {};   // id → ProductDTO actual, o null si ya no está publicado
     let sinConexion = false;
@@ -55,12 +56,12 @@
             ? `<button type="button" class="guardar" data-wish="${id}" aria-pressed="true" aria-label="Quitar ${esc(p.nombre)} de favoritos">${ICONO_WISH}</button>`
             : `<button type="button" class="guardar" data-quitar-fav="${id}" aria-pressed="true" aria-label="Quitar ${esc(p.nombre)} de favoritos">${ICONO_WISH}</button>`;
 
-        // Igual que en el catálogo: "+" para elegir color y talla; flecha si es conjunto (o sin datos).
-        let boton = '';
+        // Acción en texto subrayado: abre el selector (vidrio / hoja) o lleva al conjunto.
+        let accion = '';
         if (!noDisponible && !p.agotado) {
-            boton = p.tipo === 'conjunto' || !dto
-                ? `<a class="mas" href="${esc(p.url)}" aria-label="Ver ${esc(p.nombre)}">${ICONO_FLECHA}</a>`
-                : `<button type="button" class="mas" data-abrir="${id}" aria-expanded="false" aria-label="Elegir color y talla de ${esc(p.nombre)}">${ICONO_MAS}</button>`;
+            accion = p.tipo === 'conjunto' || !dto
+                ? `<a class="enlace fav-accion" href="${esc(p.url)}">${p.tipo === 'conjunto' ? 'Ver conjunto' : 'Ver prenda'}</a>`
+                : `<button type="button" class="enlace fav-accion" data-abrir="${id}" aria-expanded="false">Agregar a la bolsa</button>`;
         }
         const nota = noDisponible ? '<span class="nota">Ya no está disponible</span>'
             : p.agotado ? '<span class="nota">Agotado</span>'
@@ -71,10 +72,22 @@
                 <a href="${esc(p.url)}" tabindex="-1" aria-hidden="true"><img src="${esc(p.imagen)}" alt="" loading="lazy" decoding="async" data-foto></a>
                 ${marcador}
             </div>
-            <div class="fila"><a class="nombre" href="${esc(p.url)}">${esc(p.nombre)}</a>${boton}</div>
-            <span class="precio">${soles(p.precio)}${p.precioAnterior !== null && p.precioAnterior !== undefined ? `<s>${soles(p.precioAnterior)}</s>` : ''}</span>
-            ${nota}
+            <div class="card-texto">
+                <div class="fila"><a class="nombre" href="${esc(p.url)}">${esc(p.nombre)}</a></div>
+                ${p.tipo === 'conjunto' && dto ? `<span class="nota">Conjunto · ${(dto.piezas || []).length} piezas</span>` : ''}
+                <span class="precio">${soles(p.precio)}${p.precioAnterior !== null && p.precioAnterior !== undefined ? `<s>${soles(p.precioAnterior)}</s>` : ''}</span>
+                ${nota}
+                ${enBolsa(item.id)}
+                ${accion}
+            </div>
         </article>`;
+    }
+
+    /** "En tu bolsa" / "En tu bolsa · N" (unidades de esa prenda o conjunto en la bolsa). */
+    function enBolsa(id) {
+        if (!Bolsa) return '';
+        const n = Bolsa.getItems().filter(it => it.id === id).reduce((s, it) => s + it.cantidad, 0);
+        return n ? `<span class="nota en-bolsa">En tu bolsa${n > 1 ? ` · ${n}` : ''}</span>` : '';
     }
 
     function pintar(items) {
@@ -119,4 +132,17 @@
     });
 
     Wish.subscribe(items => { actualizar(items); });
+    // Si cambia la bolsa (aquí, en el selector, o en otra pestaña), se actualiza el aviso.
+    if (Bolsa) Bolsa.subscribe(() => {
+        grid.querySelectorAll('.card').forEach(card => {
+            const actual = card.querySelector('.en-bolsa');
+            const html = enBolsa(card.dataset.id);
+            if (actual) { if (html) actual.outerHTML = html; else actual.remove(); }
+            else if (html) {
+                const ancla = card.querySelector('.fav-accion');
+                if (ancla) ancla.insertAdjacentHTML('beforebegin', html);
+                else card.querySelector('.card-texto').insertAdjacentHTML('beforeend', html);
+            }
+        });
+    });
 })();

@@ -13,8 +13,9 @@ const requireSyncToken = require('../middlewares/requireSyncToken');
 /**
  * @param {{ sincronizarCatalogo: Function }} syncController
  * @param {{ estado: Function, subir: Function, limpiar: Function }} [fotosController]
+ * @param {{ pendientes: Function, importados: Function }} [pedidosController]
  */
-function crearSyncRoutes(syncController, fotosController) {
+function crearSyncRoutes(syncController, fotosController, pedidosController) {
     const router = express.Router();
     router.post('/sync-catalog', requireSyncToken, express.json({ limit: '5mb' }), syncController.sincronizarCatalogo);
 
@@ -22,6 +23,10 @@ function crearSyncRoutes(syncController, fotosController) {
         router.post('/sync-fotos/estado', requireSyncToken, express.json({ limit: '10kb' }), fotosController.estado);
         router.post('/sync-fotos/limpiar', requireSyncToken, express.json({ limit: '1mb' }), fotosController.limpiar);
         router.post('/sync-fotos', requireSyncToken, express.json({ limit: '25mb' }), fotosController.subir);
+    }
+    if (pedidosController) {
+        router.post('/pedidos/pendientes', requireSyncToken, express.json({ limit: '10kb' }), pedidosController.pendientes);
+        router.post('/pedidos/importados', requireSyncToken, express.json({ limit: '100kb' }), pedidosController.importados);
     }
     return router;
 }

@@ -94,34 +94,45 @@ describe('mensaje de WhatsApp', () => {
         assert.equal(P.totales(lineas, 9999).total, 0);
     });
 
-    test('recojo: lista, opciones por pieza, código y total', () => {
-        const m = P.armarMensaje({ lineas, entrega: 'recojo', promo: { codigo: 'AERIS10', descuento: 35.98 } });
+    test('formato "Ficha": coma vocativa, código, un espacio entre artículos, piezas y total', () => {
+        const m = P.armarMensaje({ codigo: 'AER-0042', lineas, entrega: 'recojo', promo: { codigo: 'AERIS10', descuento: 35.98 } });
         assert.equal(m, [
-            'Hola AERIS, quiero hacer este pedido:',
+            'Hola, AERIS. Me gustaría hacer este pedido:',
             '',
-            '1. Blusa seda',
-            '   Color: Negro · Talla: M',
-            '   2 × S/ 79.90 = S/ 159.80',
-            '2. Set Noir',
-            '   Blazer: Negro · S',
-            '   Pantalón: Negro · M',
-            '   1 × S/ 200.00 = S/ 200.00',
+            '*PEDIDO AER-0042*',
+            '────────────',
             '',
+            '*Blusa seda*',
+            'Negro · Talla M',
+            'Cantidad: 2 · S/ 159.80',
+            '',
+            '*Set Noir*',
+            'Blazer — Negro · Talla S',
+            'Pantalón — Negro · Talla M',
+            'Cantidad: 1 · S/ 200.00',
+            '',
+            '────────────',
             'Subtotal: S/ 359.80',
-            'Código AERIS10: -S/ 35.98',
+            'Descuento (AERIS10): −S/ 35.98',
             'Entrega: Recojo en tienda',
-            'Total: S/ 323.82'
+            '*Total: S/ 323.82*'
         ].join('\n'));
+    });
+
+    test('sin código (la tienda no respondió) dice solo PEDIDO; prenda sin color ni talla no deja línea vacía', () => {
+        const m = P.armarMensaje({ lineas: [{ titulo: 'Bolso', precio: 50, cantidad: 1, color: null, talla: null, componentes: [] }], entrega: 'recojo' });
+        assert.match(m, /\*PEDIDO\*\n/);
+        assert.match(m, /\*Bolso\*\nCantidad: 1 · S\/ 50\.00/);
     });
 
     test('envío en Lima o a provincia: el total avisa que falta el envío; Lima gratis no', () => {
         const lima = P.armarMensaje({ lineas: lineas.slice(0, 1), entrega: 'lima', promo: null });
-        assert.match(lima, /Envío en Lima \(el costo lo coordinamos según mi distrito\)/);
-        assert.match(lima, /Total: S\/ 159.80 \+ envío$/);
-        assert.doesNotMatch(lima, /Código/);
-        assert.match(P.armarMensaje({ lineas, entrega: 'provincia' }), /Envío a provincia[\s\S]*\+ envío$/);
+        assert.match(lima, /Entrega: Envío en Lima, costo por coordinar/);
+        assert.match(lima, /\*Total: S\/ 159.80 \+ envío\*$/);
+        assert.doesNotMatch(lima, /Descuento/);
+        assert.match(P.armarMensaje({ lineas, entrega: 'provincia' }), /Envío a provincia, costo por coordinar[\s\S]*\+ envío\*$/);
         const gratis = P.armarMensaje({ lineas, entrega: 'lima', envioGratis: true });
-        assert.match(gratis, /Envío en Lima \(gratis\)\nTotal: S\/ 359.80$/);
+        assert.match(gratis, /Entrega: Envío en Lima, gratis\n\*Total: S\/ 359.80\*$/);
     });
 
     test('envío gratis: se avisa solo cuando faltan S/ 30 o menos (después del descuento)', () => {
