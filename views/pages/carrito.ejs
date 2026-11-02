@@ -70,5 +70,5 @@
 <script type="application/json" id="datos-bolsa"><%- jsonParaHtml({ whatsapp: tienda.whatsapp, envio: tienda.envio, entrega: tienda.entrega }) %></script>
 
 <%- contentFor('scripts') %>
-<script src="/js/core/pedido.js"></script>
-<script src="/js/ui/bolsa.js"></script>
+<script src="/js/core/pedido.js?v=<%= version %>"></script>
+<script src="/js/ui/bolsa.js?v=<%= version %>"></script>

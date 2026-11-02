@@ -8,7 +8,7 @@
     <link rel="icon" href="/images/favicon.svg" type="image/svg+xml">
     <%# Tipografía servida desde la tienda (no desde Google): llega antes y queda en caché entre páginas %>
     <link rel="preload" href="/fonts/plus-jakarta-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="stylesheet" href="/css/aeris.css">
+    <link rel="stylesheet" href="/css/aeris.css?v=<%= version %>">
     <%- include('partials/ajustar-titulos') %>
 </head>
 <body class="pagina-<%= pagina %>">
@@ -25,12 +25,12 @@
     <div class="capa" id="capa" hidden><div class="hoja" id="hoja" role="dialog" aria-modal="true" aria-label="Elegir color y talla"></div></div>
     <div id="avisoCaja" class="aviso-caja" role="status" aria-live="polite"></div>
 
-    <script src="/js/core/contracts.js"></script>
-    <script src="/js/core/persistent-store.js"></script>
-    <script src="/js/core/bag-store.js"></script>
-    <script src="/js/core/wish-store.js"></script>
-    <script src="/js/core/pedidos-store.js"></script>
-    <script src="/js/ui/tienda.js"></script>
+    <script src="/js/core/contracts.js?v=<%= version %>"></script>
+    <script src="/js/core/persistent-store.js?v=<%= version %>"></script>
+    <script src="/js/core/bag-store.js?v=<%= version %>"></script>
+    <script src="/js/core/wish-store.js?v=<%= version %>"></script>
+    <script src="/js/core/pedidos-store.js?v=<%= version %>"></script>
+    <script src="/js/ui/tienda.js?v=<%= version %>"></script>
     <%- defineContent('scripts') %>
 </body>
 </html>

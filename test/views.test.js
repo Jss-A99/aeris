@@ -61,7 +61,7 @@ describe('vistas reales', () => {
         assert.match(h, /Set Noir/);
         assert.ok(!h.includes('Blusa agotada'), 'en el inicio no salen agotados');
         assert.match(h, /<span class="nota nuevo">Nuevo<\/span>/);
-        assert.match(h, /<link rel="stylesheet" href="\/css\/aeris.css">/);
+        assert.match(h, /<link rel="stylesheet" href="\/css\/aeris\.css\?v=[\w]+">/);
         // Tipografía propia (sin Google) y títulos ajustados antes de pintarse
         assert.match(h, /<link rel="preload" href="\/fonts\/plus-jakarta-sans-latin.woff2" as="font" type="font\/woff2" crossorigin>/);
         assert.doesNotMatch(h, /fonts\.googleapis/);
@@ -107,7 +107,7 @@ describe('vistas reales', () => {
         assert.match(h, /<a href="\/favoritos" aria-current="page">Favoritos<sup data-cuenta="wish">0<\/sup><\/a>/);
         assert.match(h, /Te puede interesar/);
         assert.ok(!h.includes('Blusa agotada'), 'no se sugieren agotados');
-        assert.match(h, /<script src="\/js\/ui\/favoritos.js"><\/script>/);
+        assert.match(h, /<script src="\/js\/ui\/favoritos.js\?v=[\w]+"><\/script>/);
         assert.doesNotMatch(h, /Wishlist/);                       // en la interfaz se dice "Favoritos"
         // Tu bolsa lleva las mismas pestañas, con Bolsa activa
         assert.match(await html('/carrito'), /<a href="\/carrito" aria-current="page">Bolsa<sup/);
@@ -122,8 +122,8 @@ describe('vistas reales', () => {
         assert.match(h, /<a href="\/pedidos" aria-current="page">Pedidos<sup data-cuenta="pedidos">0<\/sup><\/a>/);
         assert.match(h, /Aún no tienes pedidos\./);
         assert.match(h, /<a class="enlace" href="\/catalogo">Ver catálogo<\/a>/);
-        assert.match(h, /<script src="\/js\/core\/pedidos-store.js"><\/script>/);
-        assert.match(h, /<script src="\/js\/ui\/pedidos.js"><\/script>/);
+        assert.match(h, /<script src="\/js\/core\/pedidos-store.js\?v=[\w]+"><\/script>/);
+        assert.match(h, /<script src="\/js\/ui\/pedidos.js\?v=[\w]+"><\/script>/);
         assert.match(h, /"whatsapp":"51966796407"/);
         assert.doesNotMatch(h, /Mis pedidos|Esperando pago|Pagado/);   // sin estados de pago
         assert.doesNotMatch(h, /Volver a pedir|Volver a abrir WhatsApp|se guardan en este navegador/);   // quitados a pedido de la tienda

@@ -208,6 +208,6 @@ describe('API y página de la bolsa', () => {
         assert.match(h, /id="finalizar">[\s\S]*?<\/svg>\s*Enviar pedido<\/button>/);   // con el logo de WhatsApp
         assert.doesNotMatch(h, /Finalizar orden/);
         assert.match(h, /Volver al catálogo/);
-        assert.match(h, /<script src="\/js\/ui\/bolsa.js"><\/script>/);
+        assert.match(h, /<script src="\/js\/ui\/bolsa.js\?v=[\w]+"><\/script>/);
     });
 });

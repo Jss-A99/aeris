@@ -25,5 +25,5 @@
 <script type="application/json" id="datos-pedidos"><%- jsonParaHtml({ whatsapp: tienda.whatsapp, entrega: tienda.entrega }) %></script>
 
 <%- contentFor('scripts') %>
-<script src="/js/core/pedido.js"></script>
-<script src="/js/ui/pedidos.js"></script>
+<script src="/js/core/pedido.js?v=<%= version %>"></script>
+<script src="/js/ui/pedidos.js?v=<%= version %>"></script>

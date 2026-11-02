@@ -51,4 +51,4 @@
 <script type="application/json" data-productos><%- jsonParaHtml(Object.fromEntries([conjunto, ...piezasSueltas].map(p => [p.id, p]))) %></script>
 
 <%- contentFor('scripts') %>
-<script src="/js/ui/producto.js"></script>
+<script src="/js/ui/producto.js?v=<%= version %>"></script>

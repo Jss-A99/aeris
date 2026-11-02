@@ -71,6 +71,9 @@ function crearApp(opciones = {}) {
     app.locals.jsonParaHtml = jsonParaHtml;
     app.locals.soles = soles;
     app.locals.tienda = opciones.tienda || require('./config/tienda');
+    // Versión de los archivos (/css, /js): cambia con cada publicación, así el navegador no se
+    // queda con la copia vieja (se guardan 1 h). Render da el commit; en local, la hora de arranque.
+    app.locals.version = (process.env.RENDER_GIT_COMMIT || Date.now().toString(36)).slice(0, 8);
 
     // Cabeceras mínimas. La CSP completa se define con el diseño (depende de fuentes y scripts).
     app.use((req, res, next) => {

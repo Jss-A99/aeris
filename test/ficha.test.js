@@ -89,7 +89,7 @@ describe('páginas de producto y conjunto', () => {
         assert.match(h, /También te puede gustar/);
         assert.match(h, /Blusa seda/);                              // relacionado de la misma categoría
         assert.match(h, /id="datos-producto"/);
-        assert.match(h, /<script src="\/js\/ui\/producto.js"><\/script>/);
+        assert.match(h, /<script src="\/js\/ui\/producto.js\?v=[\w]+"><\/script>/);
     });
 
     test('migas según la ruta: catálogo filtrado, inicio y desde el conjunto', async () => {
