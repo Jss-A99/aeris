@@ -137,7 +137,7 @@ main { display: block; }
 .barras i { flex: 1; height: 2px; background: rgba(17,17,17,.2); }
 .barras i.on { background: var(--a-tinta); }
 .marca-grande { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; margin: 0; padding: 0 var(--pad); text-align: center; color: var(--a-acento); font-size: 22vw; font-weight: 800; line-height: .74; letter-spacing: -0.045em; white-space: nowrap; }
-.marca-grande span { display: inline-block; transform: translateY(.02em); }
+.marca-grande span { display: inline-block; transform: translateY(-.016em); }   /* base de las letras justo sobre el borde de la foto, sin cortarse */
 [data-ajustar] { padding-right: .045em; }   /* compensa el espaciado negativo de la última letra: así queda centrado */
 
 /* 5. Ventajas -------------------------------------------------------------- */
