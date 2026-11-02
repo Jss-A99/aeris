@@ -113,6 +113,32 @@ describe('vistas reales', () => {
         assert.match(await html('/carrito'), /<a href="\/carrito" aria-current="page">Bolsa<sup/);
     });
 
+    test('pedidos: título PEDIDOS, pestañas Bolsa · Favoritos · Pedidos, vacío y scripts', async () => {
+        const h = await html('/pedidos');
+        assert.match(h, /<title>Pedidos — AERIS<\/title>/);
+        assert.match(h, /<span data-ajustar>PEDIDOS<\/span>/);
+        assert.match(h, /<a href="\/carrito">Bolsa<sup data-cuenta="bolsa">0<\/sup><\/a>/);
+        assert.match(h, /<a href="\/favoritos">Favoritos<sup data-cuenta="wish">0<\/sup><\/a>/);
+        assert.match(h, /<a href="\/pedidos" aria-current="page">Pedidos<sup data-cuenta="pedidos">0<\/sup><\/a>/);
+        assert.match(h, /Aún no tienes pedidos\./);
+        assert.match(h, /<a class="enlace" href="\/catalogo">Ver catálogo<\/a>/);
+        assert.match(h, /<script src="\/js\/core\/pedidos-store.js"><\/script>/);
+        assert.match(h, /<script src="\/js\/ui\/pedidos.js"><\/script>/);
+        assert.match(h, /"whatsapp":"51966796407"/);
+        assert.doesNotMatch(h, /Mis pedidos|Esperando pago|Pagado/);   // sin estados de pago
+        // Bolsa y Favoritos también llevan la pestaña Pedidos
+        assert.match(await html('/carrito'), /<a href="\/pedidos">Pedidos<sup data-cuenta="pedidos">0<\/sup><\/a>/);
+        assert.match(await html('/favoritos'), /<a href="\/pedidos">Pedidos<sup data-cuenta="pedidos">0<\/sup><\/a>/);
+    });
+
+    test('Bolsa, Favoritos y Pedidos: el título tiene el mismo tamaño en las tres (se mide con la palabra más larga)', async () => {
+        for (const [ruta, palabra] of [['/carrito', 'TU BOLSA'], ['/favoritos', 'FAVORITOS'], ['/pedidos', 'PEDIDOS']]) {
+            const h = await html(ruta);
+            assert.match(h, new RegExp(`<h1 class="titulo" data-tope data-compacto data-igualar="TU BOLSA\\|FAVORITOS\\|PEDIDOS"><span data-ajustar>${palabra}</span></h1>`), ruta);
+        }
+        assert.match(await html('/'), /data-igualar/);   // el script de ajuste lo sabe leer
+    });
+
     test('nosotros: título, historia tipo revista, mapa de Google Maps con el punto y contacto', async () => {
         const h = await html('/nosotros');
         assert.match(h, /<span data-ajustar>NOSOTROS<\/span>/);
@@ -128,9 +154,9 @@ describe('vistas reales', () => {
     test('sistema de diseño: navegar = texto subrayado, títulos compactos, escala de letra y 3 velocidades', async () => {
         const bolsa = await html('/carrito');
         assert.match(bolsa, /<a class="enlace" href="\/catalogo">Ver catálogo<\/a>/);       // no un botón rubí
-        assert.match(bolsa, /<h1 class="titulo" data-tope data-compacto>/);
+        assert.match(bolsa, /<h1 class="titulo" data-tope data-compacto[ >]/);
         assert.match(bolsa, /class="linea esqueleto"/);                                      // carga sin saltos
-        assert.match(await html('/favoritos'), /<h1 class="titulo" data-tope data-compacto>/);
+        assert.match(await html("/favoritos"), /<h1 class="titulo" data-tope data-compacto[ >]/);
         assert.match(await html('/'), /<a class="enlace" href="\/conjunto\/4-set-noir">Ver conjunto<\/a>/);
 
         const css = await (await fetch(`${base}/css/aeris.css`)).text();

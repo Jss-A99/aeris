@@ -10,7 +10,7 @@
  * Solo se usan rutas del mismo dominio: nunca se enlaza a otro sitio.
  */
 
-const PAGINAS = Object.freeze({ '/': 'Inicio', '/carrito': 'Bolsa', '/favoritos': 'Favoritos', '/nosotros': 'Nosotros' });
+const PAGINAS = Object.freeze({ '/': 'Inicio', '/carrito': 'Bolsa', '/favoritos': 'Favoritos', '/pedidos': 'Pedidos', '/nosotros': 'Nosotros' });
 
 /**
  * Referer → ruta interna ("/catalogo?x=1"), o null si no es de esta tienda.

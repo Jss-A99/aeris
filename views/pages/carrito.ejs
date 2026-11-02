@@ -6,7 +6,7 @@
   Orden del resumen: primero el código (cambia el monto), luego la entrega (depende del monto).
 -%>
 <div class="cabecera">
-    <h1 class="titulo" data-tope data-compacto><span data-ajustar>TU BOLSA</span></h1>
+    <h1 class="titulo" data-tope data-compacto data-igualar="TU BOLSA|FAVORITOS|PEDIDOS"><span data-ajustar>TU BOLSA</span></h1>
     <script>aerisAjustar()</script>
     <div class="regla"></div>
 </div>
@@ -61,7 +61,7 @@
                 <div class="total"><dt>Total</dt><dd id="tTotal"></dd></div>
             </dl>
             <p class="aviso-entrega" id="avisoEntrega" role="alert" hidden>Elige cómo quieres recibir tu pedido.</p>
-            <button type="button" class="btn btn-wa" id="finalizar"><%- include('../partials/icono', { nombre: 'whatsapp-logo' }) %>Finalizar orden</button>
+            <button type="button" class="btn btn-wa" id="finalizar"><%- include('../partials/icono', { nombre: 'whatsapp-logo' }) %>Enviar pedido</button>
             <a class="enlace volver" href="/catalogo">Volver al catálogo</a>
         </div>
     </div>

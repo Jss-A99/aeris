@@ -23,6 +23,7 @@
     const Contracts = window.AerisContracts;
     const Bolsa = window.AerisBagStore;
     const Wish = window.AerisWishStore;
+    const PedidosGuardados = window.AerisPedidosStore;
     const movil = window.matchMedia('(max-width: 640px)');
     const raiz = document.documentElement;
 
@@ -108,6 +109,7 @@
     }
     if (Bolsa) Bolsa.subscribe(() => pintarContador('bolsa', Bolsa.count()));
     if (Wish) Wish.subscribe(items => { pintarContador('wish', items.length); marcarWish(); });
+    if (PedidosGuardados) PedidosGuardados.subscribe(items => pintarContador('pedidos', items.length));
 
     document.addEventListener('click', e => {
         const b = e.target.closest('[data-wish]');

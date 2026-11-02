@@ -24,6 +24,7 @@ function crearRutas({ pages, bolsa, pedidos, syncRouter }) {
     router.get('/conjunto/:id', pages.verConjunto);
     router.get('/favoritos', pages.favoritos);
     router.get('/carrito', pages.carrito);
+    router.get('/pedidos', pages.pedidos);
     router.get('/nosotros', pages.nosotros);
 
     // Enlaces antiguos (compartidos por WhatsApp, etc.): /productos/:id → /producto/:id
@@ -35,7 +36,7 @@ function crearRutas({ pages, bolsa, pedidos, syncRouter }) {
     router.get('/api/bolsa/productos', bolsa.productos);
     router.get('/api/promo', bolsa.promo);
 
-    // "Finalizar orden": registra el pedido con su código antes de abrir WhatsApp (no toca el stock)
+    // "Enviar pedido": registra el pedido con su código antes de abrir WhatsApp (no toca el stock)
     if (pedidos) router.post('/api/pedidos', limitePorMinuto(10), express.json({ limit: '50kb' }), pedidos.crear);
 
     router.use('/api', syncRouter);

@@ -121,5 +121,43 @@
         return `https://wa.me/${n}?text=${encodeURIComponent(texto)}`;
     }
 
-    return { totales, envioGratis, armarMensaje, enlaceWhatsApp };
+    /**
+     * El pedido que se guarda en "Pedidos" (core/pedidos-store.js), recién registrado y aún sin enviar.
+     * @param {Object} p
+     * @param {string|null} p.codigo   AER-0042, o null si la tienda no respondió
+     * @param {Object[]} p.items       CartItem enviados (en el mismo orden que p.lineas)
+     * @param {Object[]} p.lineas      líneas con el precio confirmado (las del servidor o las de la bolsa)
+     * @param {string} p.entrega
+     * @param {{ codigo:string, descuento:number }|null} [p.promo]
+     * @param {boolean} [p.envioGratis]
+     * @param {string} p.mensaje       texto de WhatsApp
+     * @param {Date} p.fecha
+     */
+    function pedidoParaGuardar({ codigo, items, lineas, entrega, promo, envioGratis: gratis, mensaje, fecha }) {
+        const t = totales(lineas, promo ? promo.descuento : 0);
+        return {
+            id: codigo || 'L-' + fecha.getTime(),
+            codigo: codigo || null,
+            fecha: fecha.toISOString(),
+            enviado: false,
+            entrega,
+            envioGratis: !!gratis,
+            promo: promo && t.descuento > 0 ? { codigo: promo.codigo, descuento: t.descuento } : null,
+            totales: t,
+            mensaje,
+            lineas: lineas.map((l, i) => {
+                const it = items[i] || {};
+                const piezas = it.componentes || [];
+                return {
+                    id: it.id, tipo: it.tipo, titulo: l.titulo, url: it.url, imagen: it.imagen,
+                    precio: l.precio, cantidad: l.cantidad, color: l.color || null, talla: l.talla || null,
+                    componentes: (l.componentes || []).map((c, j) => ({
+                        id: piezas[j] ? piezas[j].id : null, nombre: c.nombre, color: c.color || null, talla: c.talla || null
+                    }))
+                };
+            })
+        };
+    }
+
+    return { totales, envioGratis, armarMensaje, enlaceWhatsApp, pedidoParaGuardar };
 });

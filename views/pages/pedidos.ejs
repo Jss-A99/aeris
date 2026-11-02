@@ -1,0 +1,30 @@
+<%#
+  PEDIDOS. View model: { pagina, title }.
+  Los pedidos viven en el navegador (core/pedidos-store.js); pedidos.js los pinta.
+  Cada pedido: fila que se abre con + (código, fecha, marca o botón, total) y, dentro, sus artículos
+  (como en la bolsa) y el resumen. Única marca: "Enviado por WhatsApp". Mientras no se envía, en su
+  lugar va el botón rubí "Enviar pedido". En los enviados: "Volver a abrir WhatsApp" y "Volver a pedir".
+-%>
+<div class="cabecera">
+    <h1 class="titulo" data-tope data-compacto data-igualar="TU BOLSA|FAVORITOS|PEDIDOS"><span data-ajustar>PEDIDOS</span></h1>
+    <script>aerisAjustar()</script>
+    <div class="regla"></div>
+</div>
+<%- include('../partials/pestanas-cuenta', { activa: 'pedidos' }) %>
+
+<section class="pedidos" aria-label="Tus pedidos">
+    <div id="pedidos"></div>
+    <p class="nota-local" id="notaLocal" hidden>Tus pedidos se guardan en este navegador. Si cambias de celular o borras los datos del navegador, ya no aparecerán aquí; tu pedido sigue registrado en la tienda.</p>
+    <div class="vacio" id="pedidosVacio" hidden>
+        <b>Aún no tienes pedidos.</b>
+        <span>Cuando envíes un pedido desde tu bolsa, lo verás aquí.</span>
+        <a class="enlace" href="/catalogo">Ver catálogo</a>
+    </div>
+</section>
+
+<template id="iconoWA"><%- include('../partials/icono', { nombre: 'whatsapp-logo' }) %></template>
+<script type="application/json" id="datos-pedidos"><%- jsonParaHtml({ whatsapp: tienda.whatsapp, entrega: tienda.entrega }) %></script>
+
+<%- contentFor('scripts') %>
+<script src="/js/core/pedido.js"></script>
+<script src="/js/ui/pedidos.js"></script>

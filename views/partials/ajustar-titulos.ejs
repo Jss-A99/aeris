@@ -5,8 +5,9 @@
    - El tamaño se pone en el CONTENEDOR del texto, para que el espaciado entre letras (en "em")
      se calcule con el mismo tamaño que la palabra.
    - [data-tope]: lo más alto de las letras (tilde incluida) queda justo bajo la navbar.
-   - [data-compacto] (Tu bolsa, Favoritos): no pasa del 22 % del alto de la pantalla, para que
-     el contenido suba; se alinea a la izquierda.
+   - [data-compacto] (Tu bolsa, Favoritos, Pedidos): no pasa del 22 % del alto de la pantalla,
+     para que el contenido suba; se alinea a la izquierda.
+   - [data-igualar] (esas mismas tres): las tres usan el tamaño que hace caber la palabra más larga.
    - Si la tipografía aún no está lista (primera visita), solo el título espera a que llegue
      (máx. 1,2 s) y aparece con un fundido corto.
 -%>
@@ -35,6 +36,14 @@
             var disponible = caja.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
             caja.style.fontSize = '100px';
             var ancho = el.getBoundingClientRect().width;
+            // [data-igualar="TU BOLSA|FAVORITOS|PEDIDOS"]: se mide con la palabra más larga, así las
+            // pestañas comparten tamaño y el título no salta al pasar de una a otra.
+            var iguales = caja.getAttribute('data-igualar');
+            if (iguales) {
+                var propio = el.textContent;
+                iguales.split('|').forEach(function (p) { el.textContent = p; ancho = Math.max(ancho, el.getBoundingClientRect().width); });
+                el.textContent = propio;
+            }
             if (ancho > 0 && disponible > 0) {
                 var tam = 100 * disponible / ancho;
                 if (caja.hasAttribute('data-compacto')) tam = Math.min(tam, window.innerHeight * 0.22 / 0.86);

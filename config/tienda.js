@@ -38,7 +38,7 @@ module.exports = Object.freeze({
 
     /**
      * Número que recibe los pedidos: código de país + número, solo dígitos (ej. '51987654321').
-     * null = el botón "Finalizar orden" avisa que falta configurarlo.
+     * null = el botón "Enviar pedido" avisa que falta configurarlo.
      */
     whatsapp: '51966796407',
 

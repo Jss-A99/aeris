@@ -192,7 +192,7 @@ describe('API y página de la bolsa', () => {
         assert.ok(!html.includes('AERIS10'));
     });
 
-    test('la página "Tu bolsa" trae título, entrega, código y Finalizar orden', async () => {
+    test('la página "Tu bolsa" trae título, entrega, código y Enviar pedido', async () => {
         const res = await fetch(`${base}/carrito`);
         assert.equal(res.status, 200);
         const h = await res.text();
@@ -205,7 +205,8 @@ describe('API y página de la bolsa', () => {
         assert.ok(h.indexOf('id="formPromo"') < h.indexOf('id="grupoEntrega"'), 'el código va antes de la entrega');
         assert.match(h, /"gratisDesde":199,"avisarDesdeFaltan":30/);
         assert.match(h, /id="codigo"/);
-        assert.match(h, /Finalizar orden/);
+        assert.match(h, /id="finalizar">[\s\S]*?<\/svg>\s*Enviar pedido<\/button>/);   // con el logo de WhatsApp
+        assert.doesNotMatch(h, /Finalizar orden/);
         assert.match(h, /Volver al catálogo/);
         assert.match(h, /<script src="\/js\/ui\/bolsa.js"><\/script>/);
     });

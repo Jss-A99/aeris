@@ -8,9 +8,11 @@
  *    marcado y fuera del pedido.
  *  - Código promocional (lo valida el servidor), entrega (recojo / Lima / provincia) y totales.
  *  - Envío gratis en Lima: aviso con barra solo cuando falta poco (config/tienda.js → envio).
- *  - "Finalizar orden": registra el pedido en la tienda (código AER-0042, sin tocar el stock)
+ *  - "Enviar pedido": registra el pedido en la tienda (código AER-0042, sin tocar el stock)
  *    y abre WhatsApp con el pedido escrito (core/pedido.js). Si la tienda no responde, igual
  *    abre WhatsApp con el pedido, sin código, para no perder la venta.
+ *    El pedido se guarda en "Pedidos" (core/pedidos-store.js) marcado como enviado, la bolsa
+ *    se vacía y esta pestaña pasa a /pedidos.
  */
 (function () {
     'use strict';
@@ -247,7 +249,7 @@
         $('codigo').focus();
     });
 
-    /* ---------- Finalizar orden ---------- */
+    /* ---------- Enviar pedido ---------- */
     function avisoFinal(texto) {
         const el = $('avisoEntrega');
         el.textContent = texto;
@@ -275,7 +277,7 @@
         boton.disabled = true;
         boton.lastChild.textContent = 'Preparando tu pedido…';
 
-        let texto;
+        let texto, pedido;
         try {
             const res = await fetch('/api/pedidos', {
                 method: 'POST',
@@ -301,18 +303,29 @@
             }
             // Precios y totales confirmados por la tienda
             texto = P.armarMensaje({ codigo: r.codigo, lineas: r.lineas, entrega, promo: r.promo, envioGratis: r.envioGratis });
+            pedido = P.pedidoParaGuardar({ codigo: r.codigo, items: itemsPedido, lineas: r.lineas, entrega,
+                promo: r.promo, envioGratis: r.envioGratis, mensaje: texto, fecha: new Date() });
         } catch (e) {
             // La tienda no respondió: se envía igual, sin código, para no perder el pedido.
             texto = P.armarMensaje({ lineas: lineasPedido, entrega, promo, envioGratis: envioEsGratis });
+            pedido = P.pedidoParaGuardar({ codigo: null, items: itemsPedido, lineas: lineasPedido, entrega,
+                promo, envioGratis: envioEsGratis, mensaje: texto, fecha: new Date() });
         } finally {
             boton.disabled = false;
             boton.innerHTML = textoBoton;
         }
 
+        // El pedido pasa a "Pedidos" y la bolsa se vacía. Queda "Enviado por WhatsApp" al abrirse el enlace.
+        const Pedidos = window.AerisPedidosStore;
+        try { if (Pedidos) Pedidos.agregar(pedido); } catch (e) { /* sin guardar: igual se envía */ }
+        Bolsa.clear();
+
         const enlace = P.enlaceWhatsApp(datos.whatsapp, texto);
+        if (Pedidos) Pedidos.marcarEnviado(pedido.id);
         if (ventana) {
             ventana.opener = null;
             ventana.location.href = enlace;
+            window.location.href = '/pedidos';      // al volver de WhatsApp, la clienta ve su pedido
         } else {
             window.location.href = enlace;
         }

@@ -15,7 +15,7 @@
  *   pages/conjunto-detalle { pagina, title, conjunto: ProductDTO (con .piezas), piezasSueltas: ProductDTO[], migas }
  *                   migas: { migas: [{ texto, href }], categoria: { nombre, href } | null }  (utils/migas.js)
  *   pages/favoritos { pagina, title, sugerencias: ProductDTO[] }   (los favoritos viven en el navegador)
- *   pages/carrito | nosotros   { pagina, title }
+ *   pages/carrito | pedidos | nosotros   { pagina, title }   (bolsa y pedidos viven en el navegador)
  *   pages/error     { pagina, title, mensaje, status }       (lo renderiza errorHandler)
  */
 const { httpError } = require('../middlewares/errorHandler');
@@ -111,6 +111,10 @@ function crearPagesController({ catalogo }) {
 
         carrito(req, res) {
             res.render('pages/carrito', { pagina: 'carrito', title: 'Tu bolsa — AERIS' });
+        },
+
+        pedidos(req, res) {
+            res.render('pages/pedidos', { pagina: 'pedidos', title: 'Pedidos — AERIS' });
         },
 
         nosotros(req, res) {

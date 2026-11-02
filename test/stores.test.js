@@ -235,3 +235,91 @@ describe('wish-store', () => {
         assert.deepEqual([...s.datos.keys()].sort(), ['aeris:bag', 'aeris:wishlist']);
     });
 });
+
+/* ======================================================================== */
+
+const { crearPedidosStore, volverAPedir, MAXIMO } = require('../public/js/core/pedidos-store');
+const P = require('../public/js/core/pedido');
+
+describe('pedidos-store ("Pedidos", guardado en el navegador)', () => {
+    const nuevosPedidos = (storage) => crearPedidosStore({ storage, ventana: null });
+    const item = () => C.buildCartItem(blusa(), { color: 'Negro', talla: 'M' }, 2);
+    const pedido = (codigo, fecha = new Date('2026-11-01T15:30:00Z')) => P.pedidoParaGuardar({
+        codigo, items: [item()], entrega: 'lima', promo: null, envioGratis: false, mensaje: 'Hola, AERIS.', fecha,
+        lineas: [{ titulo: 'Blusa de seda', precio: 120, cantidad: 2, color: 'Negro', talla: 'M', componentes: [] }]
+    });
+
+    test('el pedido guardado lleva lo necesario para verlo y volver a pedirlo; empieza sin enviar', () => {
+        const p = pedido('AER-0043');
+        assert.equal(p.id, 'AER-0043');
+        assert.equal(p.enviado, false);
+        assert.deepEqual(p.totales, { subtotal: 240, descuento: 0, total: 240 });
+        const l = p.lineas[0];
+        assert.equal(l.id, item().id);
+        assert.equal(l.tipo, 'prenda');
+        assert.equal(l.imagen, '/images/productos/blusa-negra.jpg');
+        assert.match(l.url, /^\/producto\//);
+        // Sin código (la tienda no respondió): id local
+        assert.match(pedido(null).id, /^L-\d+$/);
+        assert.equal(pedido(null).codigo, null);
+    });
+
+    test('el más reciente queda primero; se guarda en UNA clave; marcarEnviado es la única marca', () => {
+        const s = storageFalso();
+        const ps = nuevosPedidos(s);
+        ps.agregar(pedido('AER-0001'));
+        ps.agregar(pedido('AER-0002'));
+        assert.deepEqual(ps.getItems().map(p => p.id), ['AER-0002', 'AER-0001']);
+        assert.equal(ps.count(), 2);
+        ps.marcarEnviado('AER-0001');
+        assert.deepEqual(ps.getItems().map(p => p.enviado), [false, true]);
+        assert.deepEqual([...s.datos.keys()], ['aeris:pedidos']);
+        assert.equal(json(s, 'aeris:pedidos').v, 1);
+        // Se recupera al recargar la página
+        assert.deepEqual(nuevosPedidos(s).getItems().map(p => p.id), ['AER-0002', 'AER-0001']);
+    });
+
+    test('el mismo código no se duplica; se guardan como máximo los últimos 50', () => {
+        const ps = nuevosPedidos(storageFalso());
+        ps.agregar(pedido('AER-0001'));
+        ps.agregar(pedido('AER-0001'));
+        assert.equal(ps.count(), 1);
+        for (let i = 2; i <= MAXIMO + 5; i++) ps.agregar(pedido('AER-' + String(i).padStart(4, '0')));
+        assert.equal(ps.count(), MAXIMO);
+        assert.equal(ps.getItems()[0].id, 'AER-0055');
+    });
+
+    test('rechaza un pedido mal formado y descarta lo guardado roto', () => {
+        const ps = nuevosPedidos(storageFalso());
+        assert.throws(() => ps.agregar({ id: 'x' }), C.CartItemError);
+        const s = storageFalso({ 'aeris:pedidos': JSON.stringify({ v: 1, items: [{ id: 'roto' }, pedido('AER-0009')] }) });
+        assert.deepEqual(nuevosPedidos(s).getItems().map(p => p.id), ['AER-0009']);
+    });
+
+    test('"Volver a pedir" usa el stock de hoy: ajusta, cuenta lo que ya está en la bolsa y omite lo que no existe', () => {
+        const lineas = [
+            { id: blusa().id, tipo: 'prenda', titulo: 'Blusa de seda', precio: 100, cantidad: 2, color: 'Negro', talla: 'M', componentes: [] },
+            { id: 'ya-no-existe', tipo: 'prenda', titulo: 'Falda', precio: 90, cantidad: 1, color: 'Rojo', talla: 'S', componentes: [] }
+        ];
+        const productos = { [blusa().id]: blusa(), 'ya-no-existe': null };
+
+        // Hay 3 negras M: se piden las 2, con el precio ACTUAL (120)
+        let r = volverAPedir(lineas, productos, () => 0);
+        assert.equal(r.items.length, 1);
+        assert.equal(r.items[0].cantidad, 2);
+        assert.equal(r.items[0].precio, 120);
+        assert.equal(r.incompletos, 1);              // la falda
+
+        // Ya hay 2 en la bolsa: solo cabe 1 más
+        r = volverAPedir(lineas.slice(0, 1), productos, () => 2);
+        assert.equal(r.items[0].cantidad, 1);
+        assert.equal(r.incompletos, 1);
+
+        // Ya están las 3: no se agrega nada
+        r = volverAPedir(lineas.slice(0, 1), productos, () => 3);
+        assert.deepEqual(r.items, []);
+
+        // Todo disponible
+        assert.equal(volverAPedir(lineas.slice(0, 1), productos, () => 0).incompletos, 0);
+    });
+});

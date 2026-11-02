@@ -430,6 +430,40 @@ button.enlace { background: none; border: 0; border-bottom: 1.5px solid currentC
 .fav-accion { margin-top: 4px; }
 .favoritos .vacio { padding-top: 24px; }
 
+/* 11b3. Pedidos (se guardan en el navegador) ------------------------------- */
+.pedidos { padding: 8px var(--pad) 96px; }
+.pedido { border-bottom: 1px solid var(--a-linea); }
+/* La fila entera abre y cierra (botón invisible que la cubre); "Enviar pedido" queda encima.
+   Columnas fijas: fecha, marca y total quedan alineados entre pedidos. */
+.ped-cab { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) 150px 22px; grid-template-areas: "cod fecha marca tot mas"; gap: 6px 28px; align-items: baseline; padding: 28px 0; }
+.ped-toggle { position: absolute; inset: 0; width: 100%; background: none; border: 0; padding: 0; cursor: pointer; }
+.ped-cab .cod { grid-area: cod; font-size: var(--t-xl); font-weight: 600; letter-spacing: -0.01em; line-height: 1.15; }
+.ped-cab .fecha { grid-area: fecha; font-size: var(--t-m); color: var(--a-texto2); }
+.ped-cab .marca { grid-area: marca; min-width: 0; }
+.ped-cab .tot { grid-area: tot; font-size: var(--t-l); font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+.ped-cab .mas { grid-area: mas; align-self: center; justify-self: end; width: 16px; height: 16px; stroke-width: 1.5; }
+.ped-cab .v { transition: transform var(--r-medio) cubic-bezier(.65, 0, .35, 1); transform-box: fill-box; transform-origin: center; }
+.pedido.abierto .ped-cab .v { transform: scaleY(0); }
+/* Única marca: como "En tu bolsa" de Favoritos, en negro y con check */
+.enviado { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-xs); font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--a-tinta); white-space: nowrap; animation: entrarSuave var(--r-lento) ease both; }
+.enviado .i { width: 14px; height: 14px; stroke-width: 2.2; }
+.btn-wa.compacto { position: relative; z-index: 1; width: auto; padding: 13px 18px; gap: 10px; font-size: var(--t-xs); }
+.btn-wa.compacto .i { width: 18px; height: 18px; }
+.btn-sec.btn-wa { height: auto; min-height: 52px; padding: 0 16px; }
+.ped-cuerpo { display: grid; grid-template-rows: 0fr; opacity: 0; transition: opacity var(--r-medio) ease, grid-template-rows var(--r-lento) cubic-bezier(.65, 0, .35, 1) var(--r-rapido); }
+.pedido.abierto .ped-cuerpo { grid-template-rows: 1fr; opacity: 1; transition: grid-template-rows var(--r-lento) cubic-bezier(.65, 0, .35, 1), opacity var(--r-medio) ease var(--r-medio); }
+.ped-interior { min-height: 0; overflow: hidden; }
+/* Artículos: la línea de la bolsa, sin Eliminar ni cantidad */
+.linea.de-pedido { padding: 22px 0; border-bottom: 0; border-top: 1px solid var(--a-linea);
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, .7fr) minmax(0, 1fr) 104px;
+    grid-template-areas: "nombre precio opciones foto"; }
+.linea.de-pedido .l-nombre { font-size: var(--t-l); }
+.linea.de-pedido .l-precio { font-size: var(--t-m); }
+.ped-resumen { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px 64px; padding: 28px 0 36px; border-top: 1px solid var(--a-linea); align-items: start; }
+.ped-resumen .grupo span:not(.grupo-titulo) { font-size: var(--t-m); }
+.nota-local { margin: 28px 0 0; font-size: var(--t-s); color: var(--a-texto2); max-width: 70ch; }
+.pedidos .vacio { padding-top: 24px; }
+
 /* 11c. Ficha de producto y de conjunto ------------------------------------- */
 .ficha-wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px; padding: calc(var(--alto-nav) + 16px) var(--pad) 80px; align-items: start; }
 /* Una foto grande y, debajo, la tira de miniaturas */
@@ -581,6 +615,17 @@ button.enlace { background: none; border: 0; border-bottom: 1.5px solid currentC
     .l-quitar { font-size: var(--t-s); }
     .cantidad { align-self: end; margin-right: -10px; }
     .resumen { grid-template-columns: 1fr; gap: 36px; padding-top: 28px; }
+    .pedidos { padding-bottom: 64px; }
+    .ped-cab { grid-template-columns: minmax(0, 1fr) auto 22px; grid-template-areas: "cod tot mas" "fecha fecha ." "marca marca marca"; gap: 4px 14px; padding: 20px 0; }
+    .ped-cab .cod { font-size: var(--t-l); }
+    .ped-cab .fecha { font-size: var(--t-s); }
+    .ped-cab .tot { font-size: var(--t-m); }
+    .ped-cab .marca { margin-top: 4px; }
+    .btn-wa.compacto { width: 100%; padding: 15px 16px; font-size: var(--t-s); margin-top: 10px; }
+    .linea.de-pedido { grid-template-columns: 76px minmax(0, 1fr); gap: 6px 14px; padding: 18px 0; align-items: start;
+        grid-template-areas: "foto nombre" "foto opciones" "foto precio"; }
+    .linea.de-pedido .l-nombre { font-size: var(--t-m); }
+    .ped-resumen { grid-template-columns: 1fr; gap: 28px; padding-top: 22px; }
     .totales .total dd { font-size: var(--t-xl); }
     .nav { grid-template-columns: 1fr auto; }
     .links { display: none; }
@@ -637,6 +682,8 @@ button.enlace { background: none; border: 0; border-bottom: 1.5px solid currentC
     [data-ajustar] { transition: none; }
     .pieza-cuerpo, .pieza-acc.abierta .pieza-cuerpo, .pieza-cab .v, .pieza-resumen, .card.fav { transition: none; }
     .linea.esqueleto i { animation: none; }
+    .ped-cuerpo, .pedido.abierto .ped-cuerpo, .ped-cab .v { transition: none; }
+    .enviado { animation: none; }
     .panel-menu, .panel-menu.saliendo, .panel-menu nav a, .panel-menu .bajo { animation: none; }
     .aviso { animation-duration: 2.2s; animation-name: aviso-quieto; }
     @keyframes aviso-quieto { 0%, 85% { opacity: 1; } 100% { opacity: 0; } }

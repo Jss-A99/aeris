@@ -13,7 +13,7 @@ const F = require('./fixtures/realCatalog');
  *  - un repositorio en memoria en lugar de MongoDB.
  * Así se verifica el contrato de cada vista (view model) sin depender del diseño.
  */
-const VISTAS = ['index', 'catalogo', 'producto', 'conjunto-detalle', 'favoritos', 'carrito', 'nosotros', 'error'];
+const VISTAS = ['index', 'catalogo', 'producto', 'conjunto-detalle', 'favoritos', 'carrito', 'pedidos', 'nosotros', 'error'];
 const STUB = '<%- jsonParaHtml(Object.fromEntries(Object.entries(locals).filter(([k]) => !["settings","_locals","cache"].includes(k)))) %>';
 
 const ID = (n) => String(n).padStart(24, '0');
@@ -145,7 +145,7 @@ describe('app completa', () => {
         });
 
         test('páginas estáticas', async () => {
-            for (const [ruta, pagina] of [['/favoritos', 'favoritos'], ['/carrito', 'carrito'], ['/nosotros', 'nosotros']]) {
+            for (const [ruta, pagina] of [['/favoritos', 'favoritos'], ['/carrito', 'carrito'], ['/pedidos', 'pedidos'], ['/nosotros', 'nosotros']]) {
                 assert.equal((await vista(ruta)).pagina, pagina);
             }
         });
