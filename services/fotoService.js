@@ -9,8 +9,16 @@
  */
 const { ErrorSync } = require('./syncService');
 
-/** Mismas reglas que la web: minúsculas, números, puntos, guiones; sin espacios ni tildes. */
-const NOMBRE_VALIDO = /^[a-z0-9][a-z0-9._-]*\.(jpe?g|png|webp|avif)$/;
+/**
+ * Nombre de la foto: minúsculas, números, guiones y puntos; sin espacios ni tildes; máx. 120.
+ * La extensión es OPCIONAL: "blusa-seda" y "blusa-seda.webp" son válidos (el formato se lee del
+ * contenido). Sin ".." ni punto al final.
+ */
+const NOMBRE_VALIDO = /^(?=.{1,120}$)[a-z0-9](?:[a-z0-9_-]|\.(?=[a-z0-9]))*$/;
+const EXTENSIONES = ['webp', 'jpg', 'jpeg', 'png', 'avif'];   // orden de preferencia al buscar sin extensión
+
+/** "blusa-seda.webp" → "blusa-seda"; "blusa-seda" → "blusa-seda". Solo quita extensiones de imagen. */
+const baseFoto = (nombre) => String(nombre || '').replace(/\.(jpe?g|png|webp|avif)$/, '');
 const TIPOS = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', avif: 'image/avif' };
 const MAX_BYTES = 5 * 1024 * 1024;   // 5 MB por foto
 
@@ -34,7 +42,7 @@ function prepararFotos(lista) {
     (Array.isArray(lista) ? lista : []).forEach((f, i) => {
         const nombre = String((f && f.nombre) || '');
         const donde = nombre || `foto ${i + 1}`;
-        if (!NOMBRE_VALIDO.test(nombre)) { errores.push(`"${donde}": el nombre debe ir en minúsculas, sin espacios ni tildes (ej. blusa-seda-negra.jpg).`); return; }
+        if (!NOMBRE_VALIDO.test(nombre)) { errores.push(`"${donde}": el nombre debe ir en minúsculas, sin espacios ni tildes (ej. blusa-seda-negra).`); return; }
         if (!f.version || typeof f.version !== 'string') { errores.push(`"${nombre}": falta la versión.`); return; }
         const datos = Buffer.from(String(f.datos || ''), 'base64');
         if (!datos.length) { errores.push(`"${nombre}": el archivo llegó vacío.`); return; }
@@ -66,9 +74,12 @@ function crearFotoService({ repositorio, maxCacheBytes = 40 * 1024 * 1024 }) {
             enCache -= f.datos.length;
         }
     }
+    /** Saca de la caché esa foto y sus otras formas de nombrarla (con o sin extensión). */
     function olvidar(nombre) {
-        const f = cache.get(nombre);
-        if (f) { cache.delete(nombre); enCache -= f.datos.length; }
+        const base = baseFoto(nombre);
+        for (const [n, f] of cache) {
+            if (baseFoto(n) === base) { cache.delete(n); enCache -= f.datos.length; }
+        }
     }
 
     return {
@@ -102,7 +113,11 @@ function crearFotoService({ repositorio, maxCacheBytes = 40 * 1024 * 1024 }) {
             return eliminadas;
         },
 
-        /** Foto para mostrar en la web, o null si no existe. */
+        /**
+         * Foto para mostrar en la web, o null si no existe. Se busca con el nombre tal cual y, si no
+         * está, sin extensión o con cada extensión de imagen: la hoja puede decir "blusa-seda" y
+         * Drive tener "blusa-seda.webp", o al revés.
+         */
         async leer(nombre) {
             if (!NOMBRE_VALIDO.test(nombre)) return null;
             const enMemoria = cache.get(nombre);
@@ -111,11 +126,15 @@ function crearFotoService({ repositorio, maxCacheBytes = 40 * 1024 * 1024 }) {
                 cache.set(nombre, enMemoria);
                 return enMemoria;
             }
-            const foto = await repositorio.leer(nombre);
-            if (foto) guardarEnCache(nombre, foto);
-            return foto;
+            const base = baseFoto(nombre);
+            const candidatos = [...new Set([nombre, base, ...EXTENSIONES.map(e => `${base}.${e}`)])];
+            for (const n of candidatos) {
+                const foto = await repositorio.leer(n);
+                if (foto) { guardarEnCache(nombre, foto); return foto; }
+            }
+            return null;
         }
     };
 }
 
-module.exports = { crearFotoService, prepararFotos, NOMBRE_VALIDO, MAX_BYTES };
+module.exports = { crearFotoService, prepararFotos, baseFoto, NOMBRE_VALIDO, MAX_BYTES };

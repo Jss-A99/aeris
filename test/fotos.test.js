@@ -39,6 +39,17 @@ describe('fotos: validación de lo que manda el Apps Script', () => {
         assert.deepEqual(fotos.map(f => f.tipo), ['image/webp', 'image/jpeg']);
     });
 
+    test('el nombre puede ir sin extensión: el formato se lee del contenido', () => {
+        const WEBP = Buffer.concat([Buffer.from('RIFF'), Buffer.alloc(4), Buffer.from('WEBPVP8 '), Buffer.alloc(30, 3)]);
+        const { fotos, errores } = prepararFotos([foto('blusa-seda', WEBP), foto('blusa_gasa-2', JPG), foto('blusa.v2', JPG)]);
+        assert.deepEqual(errores, []);
+        assert.deepEqual(fotos.map(f => [f.nombre, f.tipo]), [['blusa-seda', 'image/webp'], ['blusa_gasa-2', 'image/jpeg'], ['blusa.v2', 'image/jpeg']]);
+        // Sigue rechazando: punto al final, dos puntos seguidos, empezar con punto o guion, tildes
+        const malos = prepararFotos([foto('blusa.'), foto('blusa..webp'), foto('.blusa'), foto('-blusa'), foto('pantalón')]);
+        assert.equal(malos.fotos.length, 0);
+        assert.equal(malos.errores.length, 5);
+    });
+
     test('rechaza fotos de más de 5 MB', () => {
         const grande = Buffer.concat([JPG, Buffer.alloc(5 * 1024 * 1024)]);
         assert.match(prepararFotos([foto('enorme.jpg', grande)]).errores[0], /máximo es 5 MB/);
@@ -76,6 +87,20 @@ describe('fotos: servicio', () => {
         await s.guardar([foto('a.jpg', JPG, 'nueva|65')]);
         assert.equal((await s.leer('a.jpg')).version, 'nueva|65');
         assert.equal(await s.leer('../secreto'), null);
+    });
+
+    test('la hoja y Drive pueden nombrarla con o sin extensión: se encuentra igual', async () => {
+        const s = crearFotoService({ repositorio: crearFotoRepositoryMemoria() });
+        await s.guardar([foto('blusa-seda'), foto('blusa-gasa.webp'), foto('falda.jpg')]);
+        assert.ok(await s.leer('blusa-seda'));            // igual
+        assert.ok(await s.leer('blusa-seda.webp'));       // hoja con extensión, Drive sin
+        assert.ok(await s.leer('blusa-gasa'));            // hoja sin extensión, Drive con
+        assert.ok(await s.leer('falda'));
+        assert.equal(await s.leer('vestido'), null);
+        // Al actualizarla, también se renueva lo guardado en caché bajo el otro nombre
+        await s.leer('blusa-gasa');
+        await s.guardar([foto('blusa-gasa.webp', JPG, 'nueva|70')]);
+        assert.equal((await s.leer('blusa-gasa')).version, 'nueva|70');
     });
 });
 

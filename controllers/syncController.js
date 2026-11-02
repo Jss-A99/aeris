@@ -5,6 +5,7 @@
  */
 const fs = require('fs');
 const { sincronizar, ErrorSync } = require('../services/syncService');
+const { baseFoto } = require('../services/fotoService');
 
 const MAX_AVISOS_FOTOS = 10;
 
@@ -14,8 +15,9 @@ const MAX_AVISOS_FOTOS = 10;
  */
 async function fotosFaltantes({ catalogo, fotos, dirFotos }) {
     if (!fotos) return [];
-    const disponibles = new Set(await fotos.nombres());
-    try { fs.readdirSync(dirFotos).forEach(n => disponibles.add(n)); } catch (e) { /* sin carpeta local */ }
+    // Se compara sin extensión: "blusa-seda" en la hoja = "blusa-seda.webp" en Drive.
+    const disponibles = new Set((await fotos.nombres()).map(baseFoto));
+    try { fs.readdirSync(dirFotos).forEach(n => disponibles.add(baseFoto(n))); } catch (e) { /* sin carpeta local */ }
     const mencionadas = new Set();
     const anotar = (ruta) => {
         const m = /^\/images\/productos\/([^/?#]+)$/.exec(ruta || '');
@@ -26,7 +28,7 @@ async function fotosFaltantes({ catalogo, fotos, dirFotos }) {
         p.colores.forEach(c => anotar(c.imagen));
         p.variantes.forEach(v => anotar(v.imagen));
     });
-    const faltan = [...mencionadas].filter(n => !disponibles.has(n)).sort();
+    const faltan = [...mencionadas].filter(n => !disponibles.has(baseFoto(n))).sort();
     const avisos = faltan.slice(0, MAX_AVISOS_FOTOS).map(n => `Falta la foto "${n}" en la carpeta PRODUCTOS de Drive (o el nombre no coincide con la hoja).`);
     if (faltan.length > MAX_AVISOS_FOTOS) avisos.push(`... y ${faltan.length - MAX_AVISOS_FOTOS} fotos más.`);
     return avisos;
